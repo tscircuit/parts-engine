@@ -1,0 +1,21 @@
+{
+  "name": "@tscircuit/parts-engine",
+  "module": "index.ts",
+  "type": "module",
+  "main": "./dist/index.js",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@tscircuit/props": "^0.0.172",
+    "@types/bun": "latest",
+    "circuit-json": "^0.0.159",
+    "tsup": "^8.4.0"
+  },
+  "scripts": {
+    "format": "biome format --write .",
+    "test": "bun test",
+    "build": "tsup-node index.ts --format esm --dts --sourcemap"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
