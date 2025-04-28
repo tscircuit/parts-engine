@@ -1,6 +1,6 @@
 {
   "name": "@tscircuit/parts-engine",
-  "module": "index.ts",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "devDependencies": {
