@@ -7,7 +7,7 @@
         "@biomejs/biome": "^1.9.4",
         "@tscircuit/props": "^0.0.172",
         "@types/bun": "latest",
-        "circuit-json": "^0.0.159",
+        "circuit-json": "^0.0.180",
         "tsup": "^8.4.0",
       },
       "peerDependencies": {
@@ -172,7 +172,7 @@
 
     "chokidar": ["chokidar@4.0.3", "", { "dependencies": { "readdirp": "^4.0.1" } }, "sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA=="],
 
-    "circuit-json": ["circuit-json@0.0.159", "", { "dependencies": { "nanoid": "^5.0.7", "zod": "^3.23.6" } }, "sha512-NW2xGkLGhjCas6EMvbSjnpak9GV9+axJZnTh6fdu4UHVj97EMMtZOZs9/n4AEyjKexZ9SOknQiW7fTaUkvdnGA=="],
+    "circuit-json": ["circuit-json@0.0.180", "", { "dependencies": { "nanoid": "^5.0.7", "zod": "^3.23.6" } }, "sha512-kKaMOWbrymFyg3NoSCadaAdwBBE20p0xNdO9AISLkEytWgvAQCP2Mfb4n99nTYxVIhdD8inPpf5Hzw4xQfSRtA=="],
 
     "color-convert": ["color-convert@2.0.1", "", { "dependencies": { "color-name": "~1.1.4" } }, "sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ=="],
 

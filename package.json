@@ -7,7 +7,7 @@
     "@biomejs/biome": "^1.9.4",
     "@tscircuit/props": "^0.0.172",
     "@types/bun": "latest",
-    "circuit-json": "^0.0.159",
+    "circuit-json": "^0.0.180",
     "tsup": "^8.4.0"
   },
   "scripts": {
