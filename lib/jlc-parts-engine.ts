@@ -185,6 +185,17 @@ export const jlcPartsEngine: PartsEngine = {
         jlcpcb: switches.map((s: any) => `C${s.lcsc}`).slice(0, 3),
       }
     }
+    else if (
+      sourceComponent.type === "source_component" &&
+      sourceComponent.ftype === "simple_led"
+    ) {
+      const { leds } = await getJlcPartsCached("leds", {
+        package: footprinterString,
+      })
+      return {
+        jlcpcb: leds.map((l: any) => `C${l.lcsc}`).slice(0, 3),
+      }
+    }
     return {}
   },
 }
