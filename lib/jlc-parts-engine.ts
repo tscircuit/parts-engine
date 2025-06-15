@@ -189,7 +189,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_led"
     ) {
-      const { leds } = await getJlcPartsCached("led_with_ic", {
+      const { leds } = await getJlcPartsCached("leds", {
         package: footprinterString,
       })
       return {
