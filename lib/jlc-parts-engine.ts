@@ -184,8 +184,7 @@ export const jlcPartsEngine: PartsEngine = {
       return {
         jlcpcb: switches.map((s: any) => `C${s.lcsc}`).slice(0, 3),
       }
-    }
-    else if (
+    } else if (
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_led"
     ) {
@@ -194,6 +193,16 @@ export const jlcPartsEngine: PartsEngine = {
       })
       return {
         jlcpcb: leds.map((l: any) => `C${l.lcsc}`).slice(0, 3),
+      }
+    } else if (
+      sourceComponent.type === "source_component" &&
+      sourceComponent.ftype === "simple_fuse"
+    ) {
+      const { fuses } = await getJlcPartsCached("fuses", {
+        package: footprinterString,
+      })
+      return {
+        jlcpcb: fuses.map((l: any) => `C${l.lcsc}`).slice(0, 3),
       }
     }
     return {}

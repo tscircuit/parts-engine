@@ -5,9 +5,9 @@
       "name": "@tscircuit/parts-engine",
       "devDependencies": {
         "@biomejs/biome": "^1.9.4",
-        "@tscircuit/props": "^0.0.227",
+        "@tscircuit/props": "^0.0.238",
         "@types/bun": "latest",
-        "circuit-json": "^0.0.209",
+        "circuit-json": "^0.0.213",
         "tsup": "^8.4.0",
       },
       "peerDependencies": {
@@ -142,7 +142,7 @@
 
     "@tscircuit/manual-edit-events": ["@tscircuit/manual-edit-events@0.0.6", "", { "dependencies": { "zod": "^3.23.8" } }, "sha512-PLgy+/Dsw1YcnNVNqfieNGTNIaRKRJ70Jt2LcSMljwaBOtsiOwtdzj24xCYO9XzJUZc7opKytShMlx863PehTQ=="],
 
-    "@tscircuit/props": ["@tscircuit/props@0.0.227", "", { "peerDependencies": { "@tscircuit/layout": "*", "circuit-json": "*", "react": "*", "zod": "*" } }, "sha512-vJMZ2vHPX3nhfYCwCoijp/r+w1SLM3zocVSdofr6VQpV4Ct8JrLJUJ+h3AhKPttD8kunZ66jbWMlC9wA+U7iNQ=="],
+    "@tscircuit/props": ["@tscircuit/props@0.0.238", "", { "peerDependencies": { "@tscircuit/layout": "*", "circuit-json": "*", "react": "*", "zod": "*" } }, "sha512-Mq9CScwlc/zd6wgTWGBKTN2x/qarImr1Um3dt0a/WY76pPIRdjnsznN+7IZVmNxY3H/RD6CbCNjgc0DKphWYIg=="],
 
     "@tscircuit/schematic-autolayout": ["@tscircuit/schematic-autolayout@0.0.6", "", { "dependencies": { "@tscircuit/soup-util": "^0.0.38", "transformation-matrix": "^2.16.1" } }, "sha512-34cQxtlSylBKyHkzaMBCynaWJgN9c/mWm7cz63StTYIafKmfFs383K8Xoc4QX8HXCvVrHYl1aK15onZua9MxeA=="],
 
@@ -172,7 +172,7 @@
 
     "chokidar": ["chokidar@4.0.3", "", { "dependencies": { "readdirp": "^4.0.1" } }, "sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA=="],
 
-    "circuit-json": ["circuit-json@0.0.209", "", { "dependencies": { "nanoid": "^5.0.7", "zod": "^3.25.64" } }, "sha512-cu/LQQS7XPGgAfDvwbusQqJbPyMdYRkKN4jMvi837TuCSXa0Xt7cBvSqkQekyipXuAtqnLJiaAucFVHpMUNyWA=="],
+    "circuit-json": ["circuit-json@0.0.213", "", { "dependencies": { "nanoid": "^5.0.7", "zod": "*" } }, "sha512-WgKoSYyvhI+anWo1EzTBEgNQSyh68zgpW+7X3SPmpQwIkybB01j23uKp+SQPZ0U6iHRE5p84TuixWN0K6vApPQ=="],
 
     "color-convert": ["color-convert@2.0.1", "", { "dependencies": { "color-name": "~1.1.4" } }, "sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ=="],
 

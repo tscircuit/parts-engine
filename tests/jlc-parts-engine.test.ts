@@ -22,7 +22,11 @@ describe("jlcPartsEngine", () => {
       if (url.includes("/potentiometers/")) {
         return {
           json: async () => ({
-            potentiometers: [{ lcsc: "1234" }, { lcsc: "5678" }, { lcsc: "9012" }],
+            potentiometers: [
+              { lcsc: "1234" },
+              { lcsc: "5678" },
+              { lcsc: "9012" },
+            ],
           }),
         } as Response
       }
@@ -57,7 +61,11 @@ describe("jlcPartsEngine", () => {
       if (url.includes("/power_sources/")) {
         return {
           json: async () => ({
-            power_sources: [{ lcsc: "7890" }, { lcsc: "1234" }, { lcsc: "5678" }],
+            power_sources: [
+              { lcsc: "7890" },
+              { lcsc: "1234" },
+              { lcsc: "5678" },
+            ],
           }),
         } as Response
       }
