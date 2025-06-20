@@ -184,8 +184,7 @@ export const jlcPartsEngine: PartsEngine = {
       return {
         jlcpcb: switches.map((s: any) => `C${s.lcsc}`).slice(0, 3),
       }
-    }
-    else if (
+    } else if (
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_led"
     ) {

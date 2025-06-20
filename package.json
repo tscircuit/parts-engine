@@ -13,7 +13,9 @@
   "scripts": {
     "format": "biome format --write .",
     "test": "bun test",
-    "build": "tsup-node index.ts --format esm --dts --sourcemap"
+    "build": "tsup-node index.ts --format esm --dts --sourcemap",
+    "format:check": "biome format ."
+
   },
   "peerDependencies": {
     "typescript": "^5"
