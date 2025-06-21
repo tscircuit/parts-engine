@@ -196,6 +196,16 @@ export const jlcPartsEngine: PartsEngine = {
       return {
         jlcpcb: (leds ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
       }
+    } else if (
+      sourceComponent.type === "source_component" &&
+      sourceComponent.ftype === "simple_fuse"
+    ) {
+      const { fuses } = await getJlcPartsCached("fuses", {
+        package: footprinterString,
+      })
+      return {
+        jlcpcb: fuses.map((l: any) => `C${l.lcsc}`).slice(0, 3),
+      }
     }
     return {}
   },

@@ -5,9 +5,9 @@
   "main": "./dist/index.js",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@tscircuit/props": "^0.0.227",
+    "@tscircuit/props": "^0.0.238",
     "@types/bun": "latest",
-    "circuit-json": "^0.0.209",
+    "circuit-json": "^0.0.213",
     "tsup": "^8.4.0"
   },
   "scripts": {
