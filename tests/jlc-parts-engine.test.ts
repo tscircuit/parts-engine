@@ -22,7 +22,11 @@ describe("jlcPartsEngine", () => {
       if (url.includes("/potentiometers/")) {
         return {
           json: async () => ({
-            potentiometers: [{ lcsc: "1234" }, { lcsc: "5678" }, { lcsc: "9012" }],
+            potentiometers: [
+              { lcsc: "1234" },
+              { lcsc: "5678" },
+              { lcsc: "9012" },
+            ],
           }),
         } as Response
       }
@@ -57,7 +61,11 @@ describe("jlcPartsEngine", () => {
       if (url.includes("/power_sources/")) {
         return {
           json: async () => ({
-            power_sources: [{ lcsc: "7890" }, { lcsc: "1234" }, { lcsc: "5678" }],
+            power_sources: [
+              { lcsc: "7890" },
+              { lcsc: "1234" },
+              { lcsc: "5678" },
+            ],
           }),
         } as Response
       }
@@ -364,5 +372,26 @@ describe("jlcPartsEngine", () => {
     })
 
     expect(result).toEqual({})
+  })
+
+  test("should handle missing API data", async () => {
+    globalThis.fetch = (async () => ({
+      json: async () => ({}),
+    })) as unknown as typeof fetch
+
+    const resistor: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_resistor",
+      resistance: 1000,
+      source_component_id: "source_component_0",
+      name: "R2",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: resistor,
+      footprinterString: "0603",
+    })
+
+    expect(result).toEqual({ jlcpcb: [] })
   })
 })
