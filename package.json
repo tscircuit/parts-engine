@@ -1,6 +1,6 @@
 {
   "name": "@tscircuit/parts-engine",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "main": "./dist/index.js",
   "devDependencies": {
@@ -15,7 +15,6 @@
     "test": "bun test",
     "build": "tsup-node index.ts --format esm --dts --sourcemap",
     "format:check": "biome format ."
-
   },
   "peerDependencies": {
     "typescript": "^5"
