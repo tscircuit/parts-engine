@@ -204,7 +204,7 @@ export const jlcPartsEngine: PartsEngine = {
         package: footprinterString,
       })
       return {
-        jlcpcb: fuses.map((l: any) => `C${l.lcsc}`).slice(0, 3),
+        jlcpcb: (fuses ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
       }
     }
     return {}
