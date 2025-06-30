@@ -28,7 +28,8 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_resistor"
     ) {
       const { resistors } = await getJlcPartsCached("resistors", {
-        resistance: sourceComponent.display_resistance ?? sourceComponent.resistance,
+        resistance:
+          sourceComponent.display_resistance ?? sourceComponent.resistance,
         package: footprinterString,
       })
 
