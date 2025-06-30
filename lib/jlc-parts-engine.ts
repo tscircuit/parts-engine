@@ -28,7 +28,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_resistor"
     ) {
       const { resistors } = await getJlcPartsCached("resistors", {
-        resistance: sourceComponent.resistance,
+        resistance: sourceComponent.display_resistance ?? sourceComponent.resistance,
         package: footprinterString,
       })
 
@@ -43,7 +43,8 @@ export const jlcPartsEngine: PartsEngine = {
         footprinterString = footprinterString.replace("cap", "")
       }
       const { capacitors } = await getJlcPartsCached("capacitors", {
-        capacitance: sourceComponent.capacitance,
+        capacitance:
+          sourceComponent.display_capacitance ?? sourceComponent.capacitance,
         package: footprinterString,
       })
 
