@@ -2,19 +2,34 @@ import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
 
 const cache = new Map<string, any>()
 
-const getJlcPartsCached = async (name: any, params: any) => {
+const getIsBasic = (p: any): boolean =>
+  p?.isBasic === true || p?.basic === true || p?.basic === 1
+
+const sortBasicFirst = <T extends Record<string, any>>(arr: T[]): T[] =>
+  arr.slice().sort((a, b) => {
+    const aBasic = getIsBasic(a)
+    const bBasic = getIsBasic(b)
+    if (aBasic === bBasic) return 0
+    return aBasic ? -1 : 1
+  })
+
+const getJlcPartsCached = async (name: string, params: any) => {
   const paramString = new URLSearchParams({
     ...params,
     json: "true",
   }).toString()
-  if (cache.has(paramString)) {
-    return cache.get(paramString)
+
+  const cacheKey = `${name}?${paramString}`
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey)
   }
+
   const response = await fetch(
     `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`,
   )
   const responseJson = await response.json()
-  cache.set(paramString, responseJson)
+
+  cache.set(cacheKey, responseJson)
   return responseJson
 }
 
@@ -32,23 +47,26 @@ export const jlcPartsEngine: PartsEngine = {
         package: footprinterString,
       })
 
+      const chosen = sortBasicFirst(resistors ?? []).slice(0, 3)
       return {
-        jlcpcb: (resistors ?? []).map((r: any) => `C${r.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((r: any) => `C${r.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_capacitor"
     ) {
-      if (footprinterString?.includes("cap")) {
-        footprinterString = footprinterString.replace("cap", "")
+      let pkg = footprinterString
+      if (pkg?.includes("cap")) {
+        pkg = pkg.replace("cap", "")
       }
       const { capacitors } = await getJlcPartsCached("capacitors", {
         capacitance: sourceComponent.capacitance,
-        package: footprinterString,
+        package: pkg,
       })
 
+      const chosen = sortBasicFirst(capacitors ?? []).slice(0, 3)
       return {
-        jlcpcb: (capacitors ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((c: any) => `C${c.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -71,8 +89,9 @@ export const jlcPartsEngine: PartsEngine = {
               gender: sourceComponent.gender,
             },
       )
+      const chosen = sortBasicFirst(headers ?? []).slice(0, 3)
       return {
-        jlcpcb: (headers ?? []).map((h: any) => `C${h.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((h: any) => `C${h.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -82,10 +101,9 @@ export const jlcPartsEngine: PartsEngine = {
         resistance: sourceComponent.max_resistance,
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(potentiometers ?? []).slice(0, 3)
       return {
-        jlcpcb: (potentiometers ?? [])
-          .map((p: any) => `C${p.lcsc}`)
-          .slice(0, 3),
+        jlcpcb: chosen.map((p: any) => `C${p.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -94,8 +112,9 @@ export const jlcPartsEngine: PartsEngine = {
       const { diodes } = await getJlcPartsCached("diodes", {
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(diodes ?? []).slice(0, 3)
       return {
-        jlcpcb: (diodes ?? []).map((d: any) => `C${d.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((d: any) => `C${d.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -104,8 +123,9 @@ export const jlcPartsEngine: PartsEngine = {
       const { chips } = await getJlcPartsCached("chips", {
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(chips ?? []).slice(0, 3)
       return {
-        jlcpcb: (chips ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((c: any) => `C${c.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -114,9 +134,11 @@ export const jlcPartsEngine: PartsEngine = {
       const { transistors } = await getJlcPartsCached("transistors", {
         package: footprinterString,
         transistor_type: sourceComponent.transistor_type,
+        channel_type: sourceComponent.channel_type,
       })
+      const chosen = sortBasicFirst(transistors ?? []).slice(0, 3)
       return {
-        jlcpcb: (transistors ?? []).map((t: any) => `C${t.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((t: any) => `C${t.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -126,8 +148,9 @@ export const jlcPartsEngine: PartsEngine = {
         voltage: sourceComponent.voltage,
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(power_sources ?? []).slice(0, 3)
       return {
-        jlcpcb: (power_sources ?? []).map((p: any) => `C${p.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((p: any) => `C${p.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -137,8 +160,9 @@ export const jlcPartsEngine: PartsEngine = {
         inductance: sourceComponent.inductance,
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(inductors ?? []).slice(0, 3)
       return {
-        jlcpcb: (inductors ?? []).map((i: any) => `C${i.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((i: any) => `C${i.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -149,8 +173,9 @@ export const jlcPartsEngine: PartsEngine = {
         load_capacitance: sourceComponent.load_capacitance,
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(crystals ?? []).slice(0, 3)
       return {
-        jlcpcb: (crystals ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((c: any) => `C${c.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -161,8 +186,9 @@ export const jlcPartsEngine: PartsEngine = {
         mosfet_mode: sourceComponent.mosfet_mode,
         channel_type: sourceComponent.channel_type,
       })
+      const chosen = sortBasicFirst(mosfets ?? []).slice(0, 3)
       return {
-        jlcpcb: (mosfets ?? []).map((m: any) => `C${m.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((m: any) => `C${m.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -172,19 +198,21 @@ export const jlcPartsEngine: PartsEngine = {
         frequency: sourceComponent.frequency,
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(resonators ?? []).slice(0, 3)
       return {
-        jlcpcb: (resonators ?? []).map((r: any) => `C${r.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((r: any) => `C${r.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_switch"
     ) {
       const { switches } = await getJlcPartsCached("switches", {
-        switch_type: sourceComponent.type,
+        // Note: sourceComponent.type is "source_component", so we don't pass it as switch_type
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(switches ?? []).slice(0, 3)
       return {
-        jlcpcb: (switches ?? []).map((s: any) => `C${s.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((s: any) => `C${s.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -193,8 +221,9 @@ export const jlcPartsEngine: PartsEngine = {
       const { leds } = await getJlcPartsCached("leds", {
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(leds ?? []).slice(0, 3)
       return {
-        jlcpcb: (leds ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((l: any) => `C${l.lcsc}`),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -203,8 +232,9 @@ export const jlcPartsEngine: PartsEngine = {
       const { fuses } = await getJlcPartsCached("fuses", {
         package: footprinterString,
       })
+      const chosen = sortBasicFirst(fuses ?? []).slice(0, 3)
       return {
-        jlcpcb: (fuses ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
+        jlcpcb: chosen.map((l: any) => `C${l.lcsc}`),
       }
     }
     return {}
