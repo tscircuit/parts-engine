@@ -127,6 +127,25 @@ describe("jlcPartsEngine", () => {
     })
   })
 
+  test("should find resistor parts with kicad footprint", async () => {
+    const resistor: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_resistor",
+      resistance: 10000,
+      source_component_id: "source_component_0",
+      name: "R1",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: resistor,
+      footprinterString: "kicad:Resistor_SMD:R_0603_1608Metric",
+    })
+
+    expect(result).toEqual({
+      jlcpcb: ["C1234", "C5678", "C9012"],
+    })
+  })
+
   test("should find capacitor parts", async () => {
     const capacitor: AnySourceComponent = {
       type: "source_component",
@@ -215,6 +234,24 @@ describe("jlcPartsEngine", () => {
     const result = await jlcPartsEngine.findPart({
       sourceComponent: chip,
       footprinterString: "SOIC-8",
+    })
+
+    expect(result).toEqual({
+      jlcpcb: ["C5678", "C9012", "C3456"],
+    })
+  })
+
+  test("should find chip parts with kicad footprint", async () => {
+    const chip: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_chip",
+      source_component_id: "source_component_0",
+      name: "U1",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: chip,
+      footprinterString: "kicad:Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
     })
 
     expect(result).toEqual({
