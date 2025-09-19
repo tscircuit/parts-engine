@@ -1,4 +1,5 @@
 import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
+import { getApiPackageName } from "./footprint-translators/index"
 
 const cache = new Map<string, any>()
 
@@ -16,27 +17,6 @@ const getJlcPartsCached = async (name: any, params: any) => {
   const responseJson = await response.json()
   cache.set(paramString, responseJson)
   return responseJson
-}
-
-const getApiPackageName = (
-  footprint: string | undefined,
-): string | undefined => {
-  if (!footprint?.startsWith("kicad:")) {
-    return footprint
-  }
-
-  // kicad:Resistor_SMD:R_0603_1608Metric -> 0603
-  let match = footprint.match(/:[RC]_(\d{4})_/)
-  if (match) return match[1]
-
-  // kicad:Package_SO:SOIC-8_3.9x4.9mm_P1.27mm -> SOIC-8
-  // kicad:Package_TO_SOT_SMD:SOT-23 -> SOT-23
-  match = footprint.match(
-    /:(SOIC-\d+|SOT-\d+|SOD-\d+|SSOP-\d+|TSSOP-\d+|QFP-\d+|QFN-\d+)/,
-  )
-  if (match) return match[1]
-
-  return footprint
 }
 
 export const jlcPartsEngine: PartsEngine = {
@@ -62,13 +42,9 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_capacitor"
     ) {
-      let capacitorPackage = packageForApi
-      if (capacitorPackage?.includes("cap")) {
-        capacitorPackage = capacitorPackage.replace("cap", "")
-      }
       const { capacitors } = await getJlcPartsCached("capacitors", {
         capacitance: sourceComponent.capacitance,
-        package: capacitorPackage,
+        package: packageForApi,
       })
 
       return {
