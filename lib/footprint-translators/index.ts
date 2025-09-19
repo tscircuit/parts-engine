@@ -5,7 +5,7 @@ import { getJlcPackageFromFootprinterString } from "./get-jlc-package-from-footp
  * Get a JLC-compatible package name from a footprint string, which could be
  * a KiCad footprint or a generic "footprinter string".
  */
-export const getApiPackageName = (
+export const getJlcpcbPackageName = (
   footprint: string | undefined,
 ): string | undefined => {
   if (!footprint) return undefined

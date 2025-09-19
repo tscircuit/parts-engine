@@ -157,7 +157,7 @@ describe("jlcPartsEngine", () => {
 
     const result = await jlcPartsEngine.findPart({
       sourceComponent: capacitor,
-      footprinterString: "0603cap",
+      footprinterString: "cap0603",
     })
 
     expect(result).toEqual({

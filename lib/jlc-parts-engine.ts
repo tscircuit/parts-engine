@@ -1,5 +1,5 @@
 import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
-import { getApiPackageName } from "./footprint-translators/index"
+import { getJlcpcbPackageName } from "./footprint-translators/index"
 
 const cache = new Map<string, any>()
 
@@ -24,7 +24,7 @@ export const jlcPartsEngine: PartsEngine = {
     sourceComponent,
     footprinterString,
   }): Promise<SupplierPartNumbers> => {
-    const packageForApi = getApiPackageName(footprinterString)
+    const jlcpcbPackage = getJlcpcbPackageName(footprinterString)
 
     if (
       sourceComponent.type === "source_component" &&
@@ -32,7 +32,7 @@ export const jlcPartsEngine: PartsEngine = {
     ) {
       const { resistors } = await getJlcPartsCached("resistors", {
         resistance: sourceComponent.resistance,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
 
       return {
@@ -44,7 +44,7 @@ export const jlcPartsEngine: PartsEngine = {
     ) {
       const { capacitors } = await getJlcPartsCached("capacitors", {
         capacitance: sourceComponent.capacitance,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
 
       return {
@@ -80,7 +80,7 @@ export const jlcPartsEngine: PartsEngine = {
     ) {
       const { potentiometers } = await getJlcPartsCached("potentiometers", {
         resistance: sourceComponent.max_resistance,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (potentiometers ?? [])
@@ -92,7 +92,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_diode"
     ) {
       const { diodes } = await getJlcPartsCached("diodes", {
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (diodes ?? []).map((d: any) => `C${d.lcsc}`).slice(0, 3),
@@ -102,7 +102,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_chip"
     ) {
       const { chips } = await getJlcPartsCached("chips", {
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (chips ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
@@ -112,7 +112,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_transistor"
     ) {
       const { transistors } = await getJlcPartsCached("transistors", {
-        package: packageForApi,
+        package: jlcpcbPackage,
         transistor_type: sourceComponent.transistor_type,
       })
       return {
@@ -124,7 +124,7 @@ export const jlcPartsEngine: PartsEngine = {
     ) {
       const { power_sources } = await getJlcPartsCached("power_sources", {
         voltage: sourceComponent.voltage,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (power_sources ?? []).map((p: any) => `C${p.lcsc}`).slice(0, 3),
@@ -135,7 +135,7 @@ export const jlcPartsEngine: PartsEngine = {
     ) {
       const { inductors } = await getJlcPartsCached("inductors", {
         inductance: sourceComponent.inductance,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (inductors ?? []).map((i: any) => `C${i.lcsc}`).slice(0, 3),
@@ -147,7 +147,7 @@ export const jlcPartsEngine: PartsEngine = {
       const { crystals } = await getJlcPartsCached("crystals", {
         frequency: sourceComponent.frequency,
         load_capacitance: sourceComponent.load_capacitance,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (crystals ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
@@ -157,7 +157,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_mosfet"
     ) {
       const { mosfets } = await getJlcPartsCached("mosfets", {
-        package: packageForApi,
+        package: jlcpcbPackage,
         mosfet_mode: sourceComponent.mosfet_mode,
         channel_type: sourceComponent.channel_type,
       })
@@ -170,7 +170,7 @@ export const jlcPartsEngine: PartsEngine = {
     ) {
       const { resonators } = await getJlcPartsCached("resonators", {
         frequency: sourceComponent.frequency,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (resonators ?? []).map((r: any) => `C${r.lcsc}`).slice(0, 3),
@@ -181,7 +181,7 @@ export const jlcPartsEngine: PartsEngine = {
     ) {
       const { switches } = await getJlcPartsCached("switches", {
         switch_type: sourceComponent.type,
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (switches ?? []).map((s: any) => `C${s.lcsc}`).slice(0, 3),
@@ -191,7 +191,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_led"
     ) {
       const { leds } = await getJlcPartsCached("leds", {
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (leds ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
@@ -201,7 +201,7 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.ftype === "simple_fuse"
     ) {
       const { fuses } = await getJlcPartsCached("fuses", {
-        package: packageForApi,
+        package: jlcpcbPackage,
       })
       return {
         jlcpcb: (fuses ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
