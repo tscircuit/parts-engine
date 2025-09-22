@@ -1,8 +1,9 @@
 import { describe, test, expect, beforeEach } from "bun:test"
-import { jlcPartsEngine } from "../lib/jlc-parts-engine"
+import { jlcPartsEngine, cache } from "../lib/jlc-parts-engine"
 import type { AnySourceComponent } from "circuit-json"
 describe("jlcPartsEngine", () => {
   beforeEach(() => {
+    cache.clear()
     // Reset fetch fake between tests
     globalThis.fetch = (async (url: string) => {
       if (url.includes("/resistors/")) {
@@ -430,5 +431,43 @@ describe("jlcPartsEngine", () => {
     })
 
     expect(result).toEqual({ jlcpcb: [] })
+  })
+
+  test("should prefer basic parts when available", async () => {
+    // Override the global fetch mock for this specific test
+    globalThis.fetch = (async (url: string) => {
+      if (url.includes("/resistors/")) {
+        return {
+          json: async () => ({
+            resistors: [
+              { lcsc: "1111" }, // is_basic is undefined, treated as false
+              { lcsc: "2222", is_basic: true },
+              { lcsc: "3333", is_basic: false },
+              { lcsc: "4444", is_basic: true },
+              { lcsc: "5555" },
+            ],
+          }),
+        } as Response
+      }
+      return {} as Response
+    }) as unknown as typeof fetch
+
+    const resistor: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_resistor",
+      resistance: 10000,
+      source_component_id: "source_component_0",
+      name: "R1",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: resistor,
+      footprinterString: "0603",
+    })
+
+    // Expecting basic parts to be prioritized
+    expect(result).toEqual({
+      jlcpcb: ["C2222", "C4444", "C1111"],
+    })
   })
 })

@@ -1,7 +1,7 @@
 import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
 import { getJlcpcbPackageName } from "./footprint-translators/index"
 
-const cache = new Map<string, any>()
+export const cache = new Map<string, any>()
 
 const getJlcPartsCached = async (name: any, params: any) => {
   const paramString = new URLSearchParams({
@@ -17,6 +17,13 @@ const getJlcPartsCached = async (name: any, params: any) => {
   const responseJson = await response.json()
   cache.set(paramString, responseJson)
   return responseJson
+}
+
+const withBasicPartPreference = (parts: any[] | undefined) => {
+  if (!parts) return []
+  return [...parts].sort(
+    (a, b) => Number(b.is_basic ?? false) - Number(a.is_basic ?? false),
+  )
 }
 
 export const jlcPartsEngine: PartsEngine = {
@@ -36,7 +43,9 @@ export const jlcPartsEngine: PartsEngine = {
       })
 
       return {
-        jlcpcb: (resistors ?? []).map((r: any) => `C${r.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(resistors)
+          .map((r: any) => `C${r.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -48,7 +57,9 @@ export const jlcPartsEngine: PartsEngine = {
       })
 
       return {
-        jlcpcb: (capacitors ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(capacitors)
+          .map((c: any) => `C${c.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -72,7 +83,9 @@ export const jlcPartsEngine: PartsEngine = {
             },
       )
       return {
-        jlcpcb: (headers ?? []).map((h: any) => `C${h.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(headers)
+          .map((h: any) => `C${h.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -83,7 +96,7 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (potentiometers ?? [])
+        jlcpcb: withBasicPartPreference(potentiometers)
           .map((p: any) => `C${p.lcsc}`)
           .slice(0, 3),
       }
@@ -95,7 +108,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (diodes ?? []).map((d: any) => `C${d.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(diodes)
+          .map((d: any) => `C${d.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -105,7 +120,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (chips ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(chips)
+          .map((c: any) => `C${c.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -116,7 +133,9 @@ export const jlcPartsEngine: PartsEngine = {
         transistor_type: sourceComponent.transistor_type,
       })
       return {
-        jlcpcb: (transistors ?? []).map((t: any) => `C${t.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(transistors)
+          .map((t: any) => `C${t.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -127,7 +146,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (power_sources ?? []).map((p: any) => `C${p.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(power_sources)
+          .map((p: any) => `C${p.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -138,7 +159,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (inductors ?? []).map((i: any) => `C${i.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(inductors)
+          .map((i: any) => `C${i.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -150,7 +173,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (crystals ?? []).map((c: any) => `C${c.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(crystals)
+          .map((c: any) => `C${c.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -162,7 +187,9 @@ export const jlcPartsEngine: PartsEngine = {
         channel_type: sourceComponent.channel_type,
       })
       return {
-        jlcpcb: (mosfets ?? []).map((m: any) => `C${m.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(mosfets)
+          .map((m: any) => `C${m.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -173,7 +200,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (resonators ?? []).map((r: any) => `C${r.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(resonators)
+          .map((r: any) => `C${r.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -184,7 +213,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (switches ?? []).map((s: any) => `C${s.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(switches)
+          .map((s: any) => `C${s.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -194,7 +225,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (leds ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(leds)
+          .map((l: any) => `C${l.lcsc}`)
+          .slice(0, 3),
       }
     } else if (
       sourceComponent.type === "source_component" &&
@@ -204,7 +237,9 @@ export const jlcPartsEngine: PartsEngine = {
         package: jlcpcbPackage,
       })
       return {
-        jlcpcb: (fuses ?? []).map((l: any) => `C${l.lcsc}`).slice(0, 3),
+        jlcpcb: withBasicPartPreference(fuses)
+          .map((l: any) => `C${l.lcsc}`)
+          .slice(0, 3),
       }
     }
     return {}
