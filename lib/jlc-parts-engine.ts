@@ -1,6 +1,27 @@
 import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
 import { getJlcpcbPackageName } from "./footprint-translators/index"
 
+/**
+ * Result from findStandardPart containing part info with footprint.
+ * This type will be moved to @tscircuit/props once that PR is merged.
+ */
+interface StandardPartResult {
+  supplierPartNumbers: SupplierPartNumbers
+  footprint?: string
+  pinMapping?: Record<string, number | string>
+}
+
+/**
+ * Extended PartsEngine interface with findStandardPart method.
+ * This will be merged into @tscircuit/props.
+ */
+interface ExtendedPartsEngine extends PartsEngine {
+  findStandardPart?: (params: {
+    standard: string
+    sourceComponent: any
+  }) => Promise<StandardPartResult | null> | StandardPartResult | null
+}
+
 export const cache = new Map<string, any>()
 
 const getJlcPartsCached = async (name: any, params: any) => {
@@ -26,7 +47,7 @@ const withBasicPartPreference = (parts: any[] | undefined) => {
   )
 }
 
-export const jlcPartsEngine: PartsEngine = {
+export const jlcPartsEngine: ExtendedPartsEngine = {
   findPart: async ({
     sourceComponent,
     footprinterString,
@@ -241,7 +262,101 @@ export const jlcPartsEngine: PartsEngine = {
           .map((l: any) => `C${l.lcsc}`)
           .slice(0, 3),
       }
+    } else if (
+      sourceComponent.type === "source_component" &&
+      (sourceComponent as any).ftype === "simple_connector"
+    ) {
+      // Handle connector components based on their standard
+      const connectorStandard = (sourceComponent as any).connector_standard
+
+      if (connectorStandard === "usb_c") {
+        const { usb_c_connectors } = await getJlcPartsCached(
+          "usb_c_connectors",
+          {
+            package: jlcpcbPackage,
+          },
+        )
+        return {
+          jlcpcb: withBasicPartPreference(usb_c_connectors)
+            .map((c: any) => `C${c.lcsc}`)
+            .slice(0, 3),
+        }
+      }
+
+      // For other connector types or no standard specified, return empty
+      return {}
     }
     return {}
+  },
+
+  /**
+   * Find a standard part (e.g., USB-C connector) and return full part info
+   * including footprint and pin mapping.
+   */
+  findStandardPart: async ({
+    standard,
+    sourceComponent,
+  }): Promise<StandardPartResult | null> => {
+    if (standard === "usb_c") {
+      const { usb_c_connectors } = await getJlcPartsCached(
+        "usb_c_connectors",
+        {},
+      )
+
+      if (!usb_c_connectors || usb_c_connectors.length === 0) {
+        return null
+      }
+
+      // Sort by stock and preference for basic parts
+      const sortedConnectors = withBasicPartPreference(usb_c_connectors)
+      const selectedConnector = sortedConnectors[0]
+
+      if (!selectedConnector) {
+        return null
+      }
+
+      // Determine footprint based on number of contacts
+      const pinCount = selectedConnector.number_of_contacts || 16
+      const packageType = selectedConnector.package || "SMD"
+      const footprint = `usb_c_${pinCount}pin_${packageType.toLowerCase()}`
+
+      // USB-C standard pin mapping for a typical 16-pin connector
+      // This maps standard USB-C signal names to typical physical pin numbers
+      // Note: Actual mapping may vary by specific connector model
+      const pinMapping: Record<string, number> = {
+        // USB 2.0 data
+        DP: 1,
+        DM: 2,
+        // Configuration Channel
+        CC1: 3,
+        CC2: 4,
+        // VBUS (power)
+        VBUS1: 5,
+        VBUS2: 6,
+        VBUS3: 7,
+        VBUS4: 8,
+        // Ground
+        GND1: 9,
+        GND2: 10,
+        GND3: 11,
+        GND4: 12,
+        // Sideband Use
+        SBU1: 13,
+        SBU2: 14,
+        // Shield
+        SHIELD: 15,
+      }
+
+      return {
+        supplierPartNumbers: {
+          jlcpcb: sortedConnectors.map((c: any) => `C${c.lcsc}`).slice(0, 3),
+        },
+        footprint,
+        pinMapping,
+      }
+    }
+
+    // Other standards not yet implemented
+    return null
   },
 }
