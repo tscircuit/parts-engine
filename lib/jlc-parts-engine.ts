@@ -59,6 +59,12 @@ const withBasicPartPreference = (parts: any[] | undefined) => {
 }
 
 /**
+ * Required USB-C pins that must be present in a valid USB-C footprint.
+ * At minimum, a USB-C connector must expose data pins (DP/DM) and CC pins.
+ */
+const REQUIRED_USB_C_PINS = ["DP", "DM", "CC1", "CC2"] as const
+
+/**
  * USB-C standard pin mapping.
  * Maps various manufacturer pin naming conventions to standard USB-C pin names.
  * USB Type-C has 24 pins with specific designations (A1-A12, B1-B12).
@@ -212,6 +218,55 @@ function applyUsbCPinMapping(
     }
     return element
   }) as AnyCircuitElement[]
+}
+
+/**
+ * Validate that a USB-C footprint exposes the required standard pins.
+ * Returns true if all required pins (DP, DM, CC1, CC2) are present.
+ */
+function validateUsbCFootprint(circuitJson: AnyCircuitElement[]): boolean {
+  const exposedPins = new Set<string>()
+
+  for (const element of circuitJson) {
+    if (element.type === "pcb_smtpad" || element.type === "pcb_plated_hole") {
+      const portHints = (element as any).port_hints as string[] | undefined
+      if (portHints && Array.isArray(portHints)) {
+        for (const hint of portHints) {
+          exposedPins.add(hint.toUpperCase())
+        }
+      }
+    }
+  }
+
+  // Check that all required pins are present
+  for (const requiredPin of REQUIRED_USB_C_PINS) {
+    if (!exposedPins.has(requiredPin)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Get the list of missing required pins from a USB-C footprint.
+ * Returns an array of pin names that are missing.
+ */
+function getMissingUsbCPins(circuitJson: AnyCircuitElement[]): string[] {
+  const exposedPins = new Set<string>()
+
+  for (const element of circuitJson) {
+    if (element.type === "pcb_smtpad" || element.type === "pcb_plated_hole") {
+      const portHints = (element as any).port_hints as string[] | undefined
+      if (portHints && Array.isArray(portHints)) {
+        for (const hint of portHints) {
+          exposedPins.add(hint.toUpperCase())
+        }
+      }
+    }
+  }
+
+  return REQUIRED_USB_C_PINS.filter((pin) => !exposedPins.has(pin))
 }
 
 export const jlcPartsEngine: ExtendedPartsEngine = {
@@ -460,6 +515,10 @@ export const jlcPartsEngine: ExtendedPartsEngine = {
    * Find a standard part (e.g., USB-C connector) and return full part info.
    * The footprint is returned as Circuit JSON (AnyCircuitElement[]) when available.
    * Pin mapping is implicit in the Circuit JSON elements' port_hints properties.
+   *
+   * This function validates that the selected part's footprint exposes all required
+   * standard pins (e.g., DP, DM, CC1, CC2 for USB-C). Parts that don't meet the
+   * standard requirements are rejected and the next candidate is tried.
    */
   findStandardPart: async ({
     standard,
@@ -477,35 +536,53 @@ export const jlcPartsEngine: ExtendedPartsEngine = {
 
       // Sort by stock and preference for basic parts
       const sortedConnectors = withBasicPartPreference(usb_c_connectors)
-      const selectedConnector = sortedConnectors[0]
 
-      if (!selectedConnector) {
-        return null
+      // Try each connector until we find one with a valid footprint
+      const validConnectors: Array<{ lcsc: string }> = []
+      let validFootprint: AnyCircuitElement[] | undefined
+
+      for (const connector of sortedConnectors) {
+        if (!connector?.lcsc) continue
+
+        try {
+          const lcscNumber = `C${connector.lcsc}`
+          const rawEasyJson = await fetchEasyEDAComponent(lcscNumber)
+          // Parse the raw JSON to get the validated/processed version
+          const betterEasyJson = EasyEdaJsonSchema.parse(rawEasyJson)
+          const circuitJson = convertEasyEdaJsonToCircuitJson(betterEasyJson)
+          // Apply USB-C pin mapping to normalize manufacturer pin names to standard names
+          const mappedFootprint = applyUsbCPinMapping(
+            circuitJson as AnyCircuitElement[],
+          )
+
+          // Validate that the footprint exposes required USB-C pins
+          if (validateUsbCFootprint(mappedFootprint)) {
+            validFootprint = mappedFootprint
+            validConnectors.push(connector)
+
+            // We found a valid connector, now collect up to 2 more valid ones
+            // for the supplier part numbers list
+            if (validConnectors.length >= 3) {
+              break
+            }
+          }
+          // If validation fails, continue to next connector
+        } catch {
+          // If we can't fetch/parse the footprint, skip this connector
+          continue
+        }
       }
 
-      // Fetch the footprint from EasyEDA/JLCPCB
-      // USB-C connectors don't have a standard footprint - each manufacturer's
-      // connector has different physical dimensions
-      let footprint: AnyCircuitElement[] | undefined
-      try {
-        const lcscNumber = `C${selectedConnector.lcsc}`
-        const rawEasyJson = await fetchEasyEDAComponent(lcscNumber)
-        // Parse the raw JSON to get the validated/processed version
-        const betterEasyJson = EasyEdaJsonSchema.parse(rawEasyJson)
-        const circuitJson = convertEasyEdaJsonToCircuitJson(betterEasyJson)
-        // Apply USB-C pin mapping to normalize manufacturer pin names to standard names
-        footprint = applyUsbCPinMapping(circuitJson as AnyCircuitElement[])
-      } catch {
-        // If we can't fetch the footprint, return undefined
-        // The core can fall back to a default footprint or error
-        footprint = undefined
+      // If no valid connector was found, return null
+      if (validConnectors.length === 0 || !validFootprint) {
+        return null
       }
 
       return {
         supplierPartNumbers: {
-          jlcpcb: sortedConnectors.map((c: any) => `C${c.lcsc}`).slice(0, 3),
+          jlcpcb: validConnectors.map((c) => `C${c.lcsc}`),
         },
-        footprint,
+        footprint: validFootprint,
       }
     }
 
