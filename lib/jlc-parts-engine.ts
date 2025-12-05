@@ -1,5 +1,10 @@
 import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
 import type { AnyCircuitElement, AnySourceComponent } from "circuit-json"
+import {
+  fetchEasyEDAComponent,
+  convertEasyEdaJsonToCircuitJson,
+  EasyEdaJsonSchema,
+} from "easyeda"
 import { getJlcpcbPackageName } from "./footprint-translators/index"
 
 /**
@@ -316,15 +321,34 @@ export const jlcPartsEngine: ExtendedPartsEngine = {
 
       // Sort by stock and preference for basic parts
       const sortedConnectors = withBasicPartPreference(usb_c_connectors)
+      const selectedConnector = sortedConnectors[0]
 
-      // Return supplier part numbers
-      // Footprint Circuit JSON would be provided by a footprint library in the future
-      // For now, the core can use the footprinter to generate the footprint
+      if (!selectedConnector) {
+        return null
+      }
+
+      // Fetch the footprint from EasyEDA/JLCPCB
+      // USB-C connectors don't have a standard footprint - each manufacturer's
+      // connector has different physical dimensions
+      let footprint: AnyCircuitElement[] | undefined
+      try {
+        const lcscNumber = `C${selectedConnector.lcsc}`
+        const rawEasyJson = await fetchEasyEDAComponent(lcscNumber)
+        // Parse the raw JSON to get the validated/processed version
+        const betterEasyJson = EasyEdaJsonSchema.parse(rawEasyJson)
+        const circuitJson = convertEasyEdaJsonToCircuitJson(betterEasyJson)
+        footprint = circuitJson as AnyCircuitElement[]
+      } catch {
+        // If we can't fetch the footprint, return undefined
+        // The core can fall back to a default footprint or error
+        footprint = undefined
+      }
+
       return {
         supplierPartNumbers: {
           jlcpcb: sortedConnectors.map((c: any) => `C${c.lcsc}`).slice(0, 3),
         },
-        // footprint: Circuit JSON will be added when footprint library integration is available
+        footprint,
       }
     }
 
