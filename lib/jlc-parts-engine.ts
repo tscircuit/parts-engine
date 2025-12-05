@@ -1,24 +1,30 @@
 import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
+import type { AnyCircuitElement, AnySourceComponent } from "circuit-json"
 import { getJlcpcbPackageName } from "./footprint-translators/index"
 
 /**
  * Result from findStandardPart containing part info with footprint.
- * This type will be moved to @tscircuit/props once that PR is merged.
+ * This type mirrors StandardPartResult from @tscircuit/props.
+ * TODO: Import from @tscircuit/props once published.
  */
 interface StandardPartResult {
   supplierPartNumbers: SupplierPartNumbers
-  footprint?: string
-  pinMapping?: Record<string, number | string>
+  /**
+   * Circuit JSON array describing the footprint for the selected part.
+   * Pin mapping is implicit in the circuit JSON elements (e.g., pcb_smtpad, pcb_plated_hole)
+   * which contain pin_number and port_hints properties.
+   */
+  footprint?: AnyCircuitElement[]
 }
 
 /**
  * Extended PartsEngine interface with findStandardPart method.
- * This will be merged into @tscircuit/props.
+ * TODO: Use PartsEngine from @tscircuit/props once published.
  */
 interface ExtendedPartsEngine extends PartsEngine {
   findStandardPart?: (params: {
     standard: string
-    sourceComponent: any
+    sourceComponent: AnySourceComponent
   }) => Promise<StandardPartResult | null> | StandardPartResult | null
 }
 
@@ -290,8 +296,9 @@ export const jlcPartsEngine: ExtendedPartsEngine = {
   },
 
   /**
-   * Find a standard part (e.g., USB-C connector) and return full part info
-   * including footprint and pin mapping.
+   * Find a standard part (e.g., USB-C connector) and return full part info.
+   * The footprint is returned as Circuit JSON (AnyCircuitElement[]) when available.
+   * Pin mapping is implicit in the Circuit JSON elements' port_hints properties.
    */
   findStandardPart: async ({
     standard,
@@ -309,50 +316,15 @@ export const jlcPartsEngine: ExtendedPartsEngine = {
 
       // Sort by stock and preference for basic parts
       const sortedConnectors = withBasicPartPreference(usb_c_connectors)
-      const selectedConnector = sortedConnectors[0]
 
-      if (!selectedConnector) {
-        return null
-      }
-
-      // Determine footprint based on number of contacts
-      const pinCount = selectedConnector.number_of_contacts || 16
-      const packageType = selectedConnector.package || "SMD"
-      const footprint = `usb_c_${pinCount}pin_${packageType.toLowerCase()}`
-
-      // USB-C standard pin mapping for a typical 16-pin connector
-      // This maps standard USB-C signal names to typical physical pin numbers
-      // Note: Actual mapping may vary by specific connector model
-      const pinMapping: Record<string, number> = {
-        // USB 2.0 data
-        DP: 1,
-        DM: 2,
-        // Configuration Channel
-        CC1: 3,
-        CC2: 4,
-        // VBUS (power)
-        VBUS1: 5,
-        VBUS2: 6,
-        VBUS3: 7,
-        VBUS4: 8,
-        // Ground
-        GND1: 9,
-        GND2: 10,
-        GND3: 11,
-        GND4: 12,
-        // Sideband Use
-        SBU1: 13,
-        SBU2: 14,
-        // Shield
-        SHIELD: 15,
-      }
-
+      // Return supplier part numbers
+      // Footprint Circuit JSON would be provided by a footprint library in the future
+      // For now, the core can use the footprinter to generate the footprint
       return {
         supplierPartNumbers: {
           jlcpcb: sortedConnectors.map((c: any) => `C${c.lcsc}`).slice(0, 3),
         },
-        footprint,
-        pinMapping,
+        // footprint: Circuit JSON will be added when footprint library integration is available
       }
     }
 
