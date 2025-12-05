@@ -58,6 +58,162 @@ const withBasicPartPreference = (parts: any[] | undefined) => {
   )
 }
 
+/**
+ * USB-C standard pin mapping.
+ * Maps various manufacturer pin naming conventions to standard USB-C pin names.
+ * USB Type-C has 24 pins with specific designations (A1-A12, B1-B12).
+ */
+const USB_C_PIN_MAPPING: Record<string, string> = {
+  // USB 2.0 Data pins (D+/D-) - typically on A6/B6 and A7/B7
+  A6: "DP",
+  B6: "DP",
+  A7: "DM",
+  B7: "DM",
+  "D+": "DP",
+  "D-": "DM",
+  DP1: "DP",
+  DM1: "DM",
+  DP2: "DP",
+  DM2: "DM",
+  DN1: "DM",
+  DN2: "DM",
+
+  // Configuration Channel (CC1/CC2) - A5 and B5
+  A5: "CC1",
+  B5: "CC2",
+  CC: "CC1",
+
+  // VBUS pins - A4, A9, B4, B9
+  A4: "VBUS1",
+  A9: "VBUS2",
+  B4: "VBUS3",
+  B9: "VBUS4",
+  VBUS: "VBUS1",
+
+  // Ground pins - A1, A12, B1, B12
+  A1: "GND1",
+  A12: "GND2",
+  B1: "GND3",
+  B12: "GND4",
+  GND: "GND1",
+
+  // Sideband Use (SBU1/SBU2) - A8 and B8
+  A8: "SBU1",
+  B8: "SBU2",
+  SBU: "SBU1",
+
+  // SuperSpeed TX pairs - A2/A3 and B2/B3
+  A2: "TX1_PLUS",
+  A3: "TX1_MINUS",
+  B2: "TX2_PLUS",
+  B3: "TX2_MINUS",
+  "TX1+": "TX1_PLUS",
+  "TX1-": "TX1_MINUS",
+  "TX2+": "TX2_PLUS",
+  "TX2-": "TX2_MINUS",
+  SSTXP1: "TX1_PLUS",
+  SSTXN1: "TX1_MINUS",
+  SSTXP2: "TX2_PLUS",
+  SSTXN2: "TX2_MINUS",
+
+  // SuperSpeed RX pairs - A10/A11 and B10/B11
+  A10: "RX1_MINUS",
+  A11: "RX1_PLUS",
+  B10: "RX2_MINUS",
+  B11: "RX2_PLUS",
+  "RX1+": "RX1_PLUS",
+  "RX1-": "RX1_MINUS",
+  "RX2+": "RX2_PLUS",
+  "RX2-": "RX2_MINUS",
+  SSRXP1: "RX1_PLUS",
+  SSRXN1: "RX1_MINUS",
+  SSRXP2: "RX2_PLUS",
+  SSRXN2: "RX2_MINUS",
+
+  // Shield/Shell
+  SHELL: "SHIELD",
+  SH: "SHIELD",
+  SHLD: "SHIELD",
+  S: "SHIELD",
+  S1: "SHIELD",
+  S2: "SHIELD",
+  S3: "SHIELD",
+  S4: "SHIELD",
+}
+
+/**
+ * Normalize a pin name to USB-C standard naming.
+ * Handles case-insensitive matching and various manufacturer conventions.
+ */
+function normalizeUsbCPinName(pinName: string): string {
+  const upperName = pinName.toUpperCase().trim()
+
+  // Direct match in mapping
+  if (USB_C_PIN_MAPPING[upperName]) {
+    return USB_C_PIN_MAPPING[upperName]
+  }
+
+  // Check if it's already a standard name
+  const standardNames = [
+    "DP",
+    "DM",
+    "CC1",
+    "CC2",
+    "VBUS1",
+    "VBUS2",
+    "VBUS3",
+    "VBUS4",
+    "GND1",
+    "GND2",
+    "GND3",
+    "GND4",
+    "SBU1",
+    "SBU2",
+    "TX1_PLUS",
+    "TX1_MINUS",
+    "TX2_PLUS",
+    "TX2_MINUS",
+    "RX1_PLUS",
+    "RX1_MINUS",
+    "RX2_PLUS",
+    "RX2_MINUS",
+    "VCONN",
+    "SHIELD",
+  ]
+  if (standardNames.includes(upperName)) {
+    return upperName
+  }
+
+  // Return original if no mapping found
+  return pinName
+}
+
+/**
+ * Apply USB-C pin mapping to footprint Circuit JSON elements.
+ * Updates port_hints in pcb_smtpad and pcb_plated_hole elements.
+ */
+function applyUsbCPinMapping(
+  circuitJson: AnyCircuitElement[],
+): AnyCircuitElement[] {
+  return circuitJson.map((element) => {
+    if (element.type === "pcb_smtpad" || element.type === "pcb_plated_hole") {
+      const portHints = (element as any).port_hints as string[] | undefined
+      if (portHints && Array.isArray(portHints)) {
+        const normalizedHints = portHints.map((hint) =>
+          normalizeUsbCPinName(hint),
+        )
+        // Add both original and normalized hints for compatibility
+        const allHints = [...new Set([...normalizedHints, ...portHints])]
+        return {
+          ...element,
+          port_hints: allHints,
+        }
+      }
+    }
+    return element
+  }) as AnyCircuitElement[]
+}
+
 export const jlcPartsEngine: ExtendedPartsEngine = {
   findPart: async ({
     sourceComponent,
@@ -337,7 +493,8 @@ export const jlcPartsEngine: ExtendedPartsEngine = {
         // Parse the raw JSON to get the validated/processed version
         const betterEasyJson = EasyEdaJsonSchema.parse(rawEasyJson)
         const circuitJson = convertEasyEdaJsonToCircuitJson(betterEasyJson)
-        footprint = circuitJson as AnyCircuitElement[]
+        // Apply USB-C pin mapping to normalize manufacturer pin names to standard names
+        footprint = applyUsbCPinMapping(circuitJson as AnyCircuitElement[])
       } catch {
         // If we can't fetch the footprint, return undefined
         // The core can fall back to a default footprint or error
