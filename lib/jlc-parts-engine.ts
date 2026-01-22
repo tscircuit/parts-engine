@@ -116,6 +116,9 @@ export const jlcPartsEngine: PartsEngine = {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_chip"
     ) {
+      if (!jlcpcbPackage || !footprinterString) {
+        return {}
+      }
       const { chips } = await getJlcPartsCached("chips", {
         package: jlcpcbPackage,
       })
