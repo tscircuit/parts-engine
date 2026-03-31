@@ -271,10 +271,20 @@ export const jlcPartsEngine: PartsEngine = {
     supplierPartNumber,
     manufacturerPartNumber,
   }) => {
-    const partNumber = supplierPartNumber ?? manufacturerPartNumber
-    if (!partNumber) return undefined
+    let resolvedPartNumber = supplierPartNumber
 
-    const rawEasyEdaJson = await fetchEasyEDAComponent(partNumber)
+    if (!resolvedPartNumber && manufacturerPartNumber) {
+      const { components } = await getJlcPartsCached("components", {
+        search: manufacturerPartNumber,
+      })
+      resolvedPartNumber = components?.[0]
+        ? `C${components[0].lcsc}`
+        : undefined
+    }
+
+    if (!resolvedPartNumber) return undefined
+
+    const rawEasyEdaJson = await fetchEasyEDAComponent(resolvedPartNumber)
     const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
     return convertEasyEdaJsonToCircuitJson(parsed)
   },

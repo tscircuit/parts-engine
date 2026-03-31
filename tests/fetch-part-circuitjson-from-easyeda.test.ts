@@ -30,5 +30,5 @@ test("fetchPartCircuitJson works with manufacturerPartNumber (TYPE-C-31-M-12)", 
   const types = result!.map((el: any) => el.type)
   expect(
     types.filter((t: string) => t === "pcb_smtpad").length,
-  ).toBeGreaterThan(0)
-}, 20000)
+  ).toBeGreaterThan(12)
+}, 100000)
