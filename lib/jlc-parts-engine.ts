@@ -114,6 +114,15 @@ export const jlcPartsEngine: PartsEngine = {
       }
     } else if (
       sourceComponent.type === "source_component" &&
+      sourceComponent.ftype === "simple_connector" &&
+      sourceComponent.standard === "usb_c"
+    ) {
+      return {
+        jlcpcb: ["C165948"],
+        footprint: "kicad:Connector_USB/USB_C_Receptacle_HRO_TYPE-C-31-M-12",
+      } as SupplierPartNumbers
+    } else if (
+      sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_chip"
     ) {
       if (!jlcpcbPackage || !footprinterString) {

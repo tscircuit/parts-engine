@@ -242,6 +242,25 @@ describe("jlcPartsEngine", () => {
     })
   })
 
+  test("should find usb c connector parts and footprint", async () => {
+    const connector: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_connector",
+      source_component_id: "source_component_0",
+      name: "J1",
+      standard: "usb_c",
+    } as AnySourceComponent
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: connector,
+    })
+
+    expect(result).toEqual({
+      jlcpcb: ["C165948"],
+      footprint: "kicad:Connector_USB/USB_C_Receptacle_HRO_TYPE-C-31-M-12",
+    })
+  })
+
   test("should find chip parts with kicad footprint", async () => {
     const chip: AnySourceComponent = {
       type: "source_component",
