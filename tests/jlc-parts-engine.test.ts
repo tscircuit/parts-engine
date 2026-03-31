@@ -105,6 +105,17 @@ describe("jlcPartsEngine", () => {
           }),
         } as Response
       }
+      if (url.includes("/usb_c_connectors/")) {
+        return {
+          json: async () => ({
+            usb_c_connectors: [
+              { lcsc: "165948" },
+              { lcsc: "165949" },
+              { lcsc: "165950" },
+            ],
+          }),
+        } as Response
+      }
       return {} as Response
     }) as unknown as typeof fetch
   })
@@ -392,6 +403,24 @@ describe("jlcPartsEngine", () => {
 
     expect(result).toEqual({
       jlcpcb: ["C2345", "C6789", "C0123"],
+    })
+  })
+
+  test("should find usb_c connector parts", async () => {
+    const connector = {
+      type: "source_component",
+      ftype: "simple_connector",
+      standard: "usb_c",
+      source_component_id: "source_component_0",
+      name: "J1",
+    } as AnySourceComponent
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: connector,
+    })
+
+    expect(result).toEqual({
+      jlcpcb: ["C165948", "C165949", "C165950"],
     })
   })
 
