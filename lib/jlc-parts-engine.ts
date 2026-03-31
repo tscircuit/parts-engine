@@ -1,5 +1,10 @@
 import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
 import { getJlcpcbPackageName } from "./footprint-translators/index"
+import {
+  fetchEasyEDAComponent,
+  EasyEdaJsonSchema,
+  convertEasyEdaJsonToCircuitJson,
+} from "easyeda"
 
 export const cache = new Map<string, any>()
 
@@ -244,7 +249,33 @@ export const jlcPartsEngine: PartsEngine = {
           .map((l: any) => `C${l.lcsc}`)
           .slice(0, 3),
       }
+    } else if (
+      sourceComponent.type === "source_component" &&
+      sourceComponent.ftype === "simple_connector" &&
+      sourceComponent.standard === "usb_c"
+    ) {
+      const { usb_c_connectors } = await getJlcPartsCached(
+        "usb_c_connectors",
+        {},
+      )
+      return {
+        jlcpcb: withBasicPartPreference(usb_c_connectors)
+          .map((c: any) => `C${c.lcsc}`)
+          .slice(0, 3),
+      }
     }
     return {}
+  },
+
+  fetchPartCircuitJson: async ({
+    supplierPartNumber,
+    manufacturerPartNumber,
+  }) => {
+    const partNumber = supplierPartNumber ?? manufacturerPartNumber
+    if (!partNumber) return undefined
+
+    const rawEasyEdaJson = await fetchEasyEDAComponent(partNumber)
+    const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
+    return convertEasyEdaJsonToCircuitJson(parsed)
   },
 }
