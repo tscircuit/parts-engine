@@ -4,12 +4,14 @@
   "workspaces": {
     "": {
       "name": "@tscircuit/parts-engine",
+      "dependencies": {
+        "easyeda": "^0.0.253",
+      },
       "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@tscircuit/props": "^0.0.500",
         "@types/bun": "latest",
         "circuit-json": "^0.0.406",
-        "easyeda": "^0.0.253",
         "tsup": "^8.4.0",
       },
       "peerDependencies": {
