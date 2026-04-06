@@ -4,7 +4,7 @@ import {
   fetchEasyEDAComponent,
   EasyEdaJsonSchema,
   convertEasyEdaJsonToCircuitJson,
-} from "easyeda"
+} from "easyeda/browser"
 
 export const cache = new Map<string, any>()
 
