@@ -8,7 +8,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@tscircuit/props": "^0.0.502",
+    "@tscircuit/props": "^0.0.505",
     "@types/bun": "latest",
     "circuit-json": "^0.0.406",
     "tsup": "^8.4.0"

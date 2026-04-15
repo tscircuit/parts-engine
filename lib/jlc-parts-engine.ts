@@ -8,6 +8,14 @@ import {
 
 export const cache = new Map<string, any>()
 
+type PlatformFetch = typeof fetch
+
+type FetchPartCircuitJsonParams = {
+  supplierPartNumber?: string
+  manufacturerPartNumber?: string
+  platformFetch?: PlatformFetch
+}
+
 const getJlcPartsCached = async (name: any, params: any) => {
   const paramString = new URLSearchParams({
     ...params,
@@ -31,7 +39,11 @@ const withBasicPartPreference = (parts: any[] | undefined) => {
   )
 }
 
-export const jlcPartsEngine: PartsEngine = {
+export const createJlcPartsEngine = ({
+  platformFetch: enginePlatformFetch,
+}: {
+  platformFetch?: PlatformFetch
+} = {}): PartsEngine => ({
   findPart: async ({
     sourceComponent,
     footprinterString,
@@ -270,7 +282,10 @@ export const jlcPartsEngine: PartsEngine = {
   fetchPartCircuitJson: async ({
     supplierPartNumber,
     manufacturerPartNumber,
-  }) => {
+    platformFetch: callPlatformFetch,
+  }: FetchPartCircuitJsonParams) => {
+    const easyEdaFetch =
+      callPlatformFetch ?? enginePlatformFetch ?? globalThis.fetch
     let resolvedPartNumber = supplierPartNumber
 
     if (!resolvedPartNumber && manufacturerPartNumber) {
@@ -284,8 +299,12 @@ export const jlcPartsEngine: PartsEngine = {
 
     if (!resolvedPartNumber) return undefined
 
-    const rawEasyEdaJson = await fetchEasyEDAComponent(resolvedPartNumber)
+    const rawEasyEdaJson = await fetchEasyEDAComponent(resolvedPartNumber, {
+      fetch: easyEdaFetch,
+    })
     const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
     return convertEasyEdaJsonToCircuitJson(parsed)
   },
-}
+})
+
+export const jlcPartsEngine: PartsEngine = createJlcPartsEngine()
