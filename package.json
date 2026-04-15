@@ -8,15 +8,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@tscircuit/props": "^0.0.502",
+    "@tscircuit/props": "^0.0.504",
     "@types/bun": "latest",
-    "circuit-json": "^0.0.406",
+    "circuit-json": "^0.0.407",
     "tsup": "^8.4.0"
   },
   "scripts": {
     "format": "biome format --write .",
     "test": "bun test",
-    "build": "tsup-node index.ts --format esm --dts --sourcemap",
+    "build": "tsup-node",
     "format:check": "biome format ."
   },
   "peerDependencies": {
