@@ -1,4 +1,4 @@
-import type { PartsEngine, SupplierPartNumbers } from "@tscircuit/props"
+import type { PartsEngine } from "@tscircuit/props"
 import {
   fetchEasyEDAComponent,
   EasyEdaJsonSchema,
@@ -15,22 +15,10 @@ export class JlcPartsEngine implements PartsEngine {
     this.enginePlatformFetch = options.platformFetch
   }
 
-  findPart(
-    params: Parameters<PartsEngine["findPart"]>[0],
-  ): ReturnType<PartsEngine["findPart"]> {
-    return this._findPart(params)
-  }
-
-  fetchPartCircuitJson(
-    params: Parameters<NonNullable<PartsEngine["fetchPartCircuitJson"]>>[0],
-  ): ReturnType<NonNullable<PartsEngine["fetchPartCircuitJson"]>> {
-    return this._fetchPartCircuitJson(params)
-  }
-
-  private async _findPart({
+  async findPart({
     sourceComponent,
     footprinterString,
-  }: Parameters<PartsEngine["findPart"]>[0]): Promise<SupplierPartNumbers> {
+  }: Parameters<PartsEngine["findPart"]>[0]) {
     const jlcpcbPackage = getJlcpcbPackageName(footprinterString)
 
     if (
@@ -263,7 +251,7 @@ export class JlcPartsEngine implements PartsEngine {
     return {}
   }
 
-  private async _fetchPartCircuitJson({
+  async fetchPartCircuitJson({
     supplierPartNumber,
     manufacturerPartNumber,
     platformFetch: callPlatformFetch,
