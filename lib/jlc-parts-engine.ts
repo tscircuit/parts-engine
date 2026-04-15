@@ -270,6 +270,7 @@ export const jlcPartsEngine: PartsEngine = {
   fetchPartCircuitJson: async ({
     supplierPartNumber,
     manufacturerPartNumber,
+    fetch,
   }) => {
     let resolvedPartNumber = supplierPartNumber
 
@@ -284,7 +285,10 @@ export const jlcPartsEngine: PartsEngine = {
 
     if (!resolvedPartNumber) return undefined
 
-    const rawEasyEdaJson = await fetchEasyEDAComponent(resolvedPartNumber)
+    const rawEasyEdaJson = await fetchEasyEDAComponent(
+      resolvedPartNumber,
+      fetch ? { fetch } : undefined,
+    )
     const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
     return convertEasyEdaJsonToCircuitJson(parsed)
   },
