@@ -3,6 +3,9 @@
   "version": "0.0.16",
   "type": "module",
   "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@tscircuit/props": "^0.0.505",
