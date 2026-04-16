@@ -9,10 +9,10 @@ import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
 import type { CreateJlcPartsEngineOptions } from "./types"
 
 export class JlcPartsEngine implements PartsEngine {
-  private readonly enginePlatformFetch: CreateJlcPartsEngineOptions["platformFetch"]
+  private readonly platformFetch: CreateJlcPartsEngineOptions["platformFetch"]
 
   constructor(options: CreateJlcPartsEngineOptions = {}) {
-    this.enginePlatformFetch = options.platformFetch
+    this.platformFetch = options.platformFetch
   }
 
   async findPart({
@@ -257,7 +257,7 @@ export class JlcPartsEngine implements PartsEngine {
     platformFetch: callPlatformFetch,
   }: Parameters<NonNullable<PartsEngine["fetchPartCircuitJson"]>>[0]) {
     const easyEdaFetch =
-      callPlatformFetch ?? this.enginePlatformFetch ?? globalThis.fetch
+      callPlatformFetch ?? this.platformFetch ?? globalThis.fetch
     let resolvedPartNumber = supplierPartNumber
 
     if (!resolvedPartNumber && manufacturerPartNumber) {
