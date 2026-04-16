@@ -5,14 +5,38 @@ import {
   convertEasyEdaJsonToCircuitJson,
 } from "easyeda/browser"
 import { getJlcpcbPackageName } from "../footprint-translators/index"
+import { fetchWithEasyEdaProxy } from "./fetchWithEasyEdaProxy"
 import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
-import type { CreateJlcPartsEngineOptions } from "./types"
+import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 
-export class JlcPartsEngine implements PartsEngine {
-  private readonly platformFetch: CreateJlcPartsEngineOptions["platformFetch"]
+export class JlcPcbPartsEngine implements PartsEngine {
+  private readonly platformFetch: JlcPcbPartsEngineOptions["platformFetch"]
+  private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxy"]
 
-  constructor(options: CreateJlcPartsEngineOptions = {}) {
-    this.platformFetch = options.platformFetch
+  constructor({
+    platformFetch: platformFetch,
+    easyEdaProxy: easyEdaProxyConfig,
+  }: JlcPcbPartsEngineOptions = {}) {
+    this.platformFetch = platformFetch
+    this.easyEdaProxyConfig = easyEdaProxyConfig
+  }
+
+  private getEasyEdaPlatformFetch({
+    platformFetchOverride,
+  }: {
+    platformFetchOverride?: PlatformFetch
+  }): PlatformFetch {
+    const resolvedPlatformFetch =
+      platformFetchOverride ?? this.platformFetch ?? globalThis.fetch
+
+    if (!this.easyEdaProxyConfig) {
+      return resolvedPlatformFetch
+    }
+
+    return fetchWithEasyEdaProxy({
+      platformFetch: resolvedPlatformFetch,
+      easyEdaProxy: this.easyEdaProxyConfig,
+    })
   }
 
   async findPart({
@@ -254,10 +278,11 @@ export class JlcPartsEngine implements PartsEngine {
   async fetchPartCircuitJson({
     supplierPartNumber,
     manufacturerPartNumber,
-    platformFetch: callPlatformFetch,
+    platformFetch: platformFetchOverride,
   }: Parameters<NonNullable<PartsEngine["fetchPartCircuitJson"]>>[0]) {
-    const easyEdaFetch =
-      callPlatformFetch ?? this.platformFetch ?? globalThis.fetch
+    const easyEdaPlatformFetch = this.getEasyEdaPlatformFetch({
+      platformFetchOverride,
+    })
     let resolvedPartNumber = supplierPartNumber
 
     if (!resolvedPartNumber && manufacturerPartNumber) {
@@ -272,7 +297,7 @@ export class JlcPartsEngine implements PartsEngine {
     if (!resolvedPartNumber) return undefined
 
     const rawEasyEdaJson = await fetchEasyEDAComponent(resolvedPartNumber, {
-      fetch: easyEdaFetch,
+      fetch: easyEdaPlatformFetch as typeof fetch,
     })
     const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
     return convertEasyEdaJsonToCircuitJson(parsed)
