@@ -11,31 +11,26 @@ import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 
 export class JlcPcbPartsEngine implements PartsEngine {
   private readonly platformFetch: JlcPcbPartsEngineOptions["platformFetch"]
-  private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxy"]
+  private readonly easyEdaProxy: JlcPcbPartsEngineOptions["easyEdaProxy"]
 
-  constructor({
-    platformFetch: platformFetch,
-    easyEdaProxy: easyEdaProxyConfig,
-  }: JlcPcbPartsEngineOptions = {}) {
-    this.platformFetch = platformFetch
-    this.easyEdaProxyConfig = easyEdaProxyConfig
+  constructor(options: JlcPcbPartsEngineOptions = {}) {
+    this.platformFetch = options.platformFetch
+    this.easyEdaProxy = options.easyEdaProxy
   }
 
-  private getEasyEdaPlatformFetch({
-    platformFetchOverride,
-  }: {
-    platformFetchOverride?: PlatformFetch
-  }): PlatformFetch {
+  private getEasyEdaPlatformFetch(
+    platformFetchOverride?: PlatformFetch,
+  ): PlatformFetch {
     const resolvedPlatformFetch =
       platformFetchOverride ?? this.platformFetch ?? globalThis.fetch
 
-    if (!this.easyEdaProxyConfig) {
+    if (!this.easyEdaProxy) {
       return resolvedPlatformFetch
     }
 
     return fetchWithEasyEdaProxy({
       platformFetch: resolvedPlatformFetch,
-      easyEdaProxy: this.easyEdaProxyConfig,
+      easyEdaProxy: this.easyEdaProxy,
     })
   }
 
@@ -280,9 +275,9 @@ export class JlcPcbPartsEngine implements PartsEngine {
     manufacturerPartNumber,
     platformFetch: platformFetchOverride,
   }: Parameters<NonNullable<PartsEngine["fetchPartCircuitJson"]>>[0]) {
-    const easyEdaPlatformFetch = this.getEasyEdaPlatformFetch({
+    const easyEdaPlatformFetch = this.getEasyEdaPlatformFetch(
       platformFetchOverride,
-    })
+    )
     let resolvedPartNumber = supplierPartNumber
 
     if (!resolvedPartNumber && manufacturerPartNumber) {

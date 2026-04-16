@@ -10,7 +10,7 @@ export type FetchPartCircuitJsonParams = {
 }
 
 export type EasyEdaProxyConfig = {
-  apiBaseUrl: string
+  proxyEndpointUrl: string
   headers?: Record<string, string>
 }
 

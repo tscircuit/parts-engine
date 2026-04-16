@@ -13,12 +13,9 @@ const getRequestUrl = (
 const isEasyEdaApiRequestUrl = (requestUrl: string): boolean =>
   requestUrl.startsWith(`${EASYEDA_API_ORIGIN}/api/`)
 
-const getEasyEdaProxyUrl = (apiBaseUrl: string): string =>
-  `${apiBaseUrl.replace(/\/+$/, "")}/proxy`
-
 export const fetchWithEasyEdaProxy = ({
   platformFetch,
-  easyEdaProxy: easyEdaProxyConfig,
+  easyEdaProxy,
 }: {
   platformFetch: PlatformFetch
   easyEdaProxy: EasyEdaProxyConfig
@@ -68,13 +65,11 @@ export const fetchWithEasyEdaProxy = ({
       targetRequestHeaders.get("content-type") ?? "",
     )
 
-    for (const [name, value] of Object.entries(
-      easyEdaProxyConfig.headers ?? {},
-    )) {
+    for (const [name, value] of Object.entries(easyEdaProxy.headers ?? {})) {
       proxyRequestHeaders.set(name, value)
     }
 
-    return platformFetch(getEasyEdaProxyUrl(easyEdaProxyConfig.apiBaseUrl), {
+    return platformFetch(easyEdaProxy.proxyEndpointUrl, {
       ...requestInit,
       headers: proxyRequestHeaders,
     })
