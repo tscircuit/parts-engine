@@ -11,11 +11,11 @@ import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 
 export class JlcPcbPartsEngine implements PartsEngine {
   private readonly platformFetch: JlcPcbPartsEngineOptions["platformFetch"]
-  private readonly easyEdaProxy: JlcPcbPartsEngineOptions["easyEdaProxy"]
+  private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxyConfig"]
 
   constructor(options: JlcPcbPartsEngineOptions = {}) {
     this.platformFetch = options.platformFetch
-    this.easyEdaProxy = options.easyEdaProxy
+    this.easyEdaProxyConfig = options.easyEdaProxyConfig
   }
 
   private getEasyEdaPlatformFetch(
@@ -24,13 +24,13 @@ export class JlcPcbPartsEngine implements PartsEngine {
     const resolvedPlatformFetch =
       platformFetchOverride ?? this.platformFetch ?? globalThis.fetch
 
-    if (!this.easyEdaProxy) {
+    if (!this.easyEdaProxyConfig) {
       return resolvedPlatformFetch
     }
 
     return fetchWithEasyEdaProxy({
       platformFetch: resolvedPlatformFetch,
-      easyEdaProxy: this.easyEdaProxy,
+      easyEdaProxyConfig: this.easyEdaProxyConfig,
     })
   }
 

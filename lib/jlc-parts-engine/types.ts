@@ -16,5 +16,5 @@ export type EasyEdaProxyConfig = {
 
 export type JlcPcbPartsEngineOptions = {
   platformFetch?: PlatformFetch
-  easyEdaProxy?: EasyEdaProxyConfig
+  easyEdaProxyConfig?: EasyEdaProxyConfig
 }

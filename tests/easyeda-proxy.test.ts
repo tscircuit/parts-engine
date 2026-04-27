@@ -26,7 +26,7 @@ test("fetchWithEasyEdaProxy routes EasyEDA API requests through /proxy", async (
 
   const proxiedFetch = fetchWithEasyEdaProxy({
     platformFetch,
-    easyEdaProxy: {
+    easyEdaProxyConfig: {
       proxyEndpointUrl: "https://api.example.com/proxy",
       headers: { "x-api-key": "test-key" },
     },
@@ -65,7 +65,7 @@ test("fetchWithEasyEdaProxy leaves non-EasyEDA requests unchanged", async () => 
 
   const proxiedFetch = fetchWithEasyEdaProxy({
     platformFetch,
-    easyEdaProxy: {
+    easyEdaProxyConfig: {
       proxyEndpointUrl: "https://api.example.com",
     },
   })
@@ -84,7 +84,7 @@ test("JlcPcbPartsEngine applies EasyEDA proxy to fetchPartCircuitJson", async ()
   const { calls, platformFetch } = createFetchSpy()
   const engine = new JlcPcbPartsEngine({
     platformFetch,
-    easyEdaProxy: {
+    easyEdaProxyConfig: {
       proxyEndpointUrl: "https://api.example.com/proxy",
     },
   })
