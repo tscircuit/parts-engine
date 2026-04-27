@@ -1,17 +1,13 @@
-import type { PartsEngine } from "@tscircuit/props"
-import { JlcPartsEngine } from "./JlcPartsEngine"
-import type { CreateJlcPartsEngineOptions } from "./types"
+import { JlcPcbPartsEngine } from "./JlcPartsEngine"
 
-export { JlcPartsEngine }
+export { JlcPcbPartsEngine }
 export { cache } from "./jlc-parts-cache"
+export { getFetchWithEasyEdaProxy } from "./getFetchWithEasyEdaProxy"
 export type {
   PlatformFetch,
   FetchPartCircuitJsonParams,
-  CreateJlcPartsEngineOptions,
+  EasyEdaProxyConfig,
+  JlcPcbPartsEngineOptions,
 } from "./types"
 
-export const createJlcPartsEngine = (
-  options: CreateJlcPartsEngineOptions = {},
-): PartsEngine => new JlcPartsEngine(options)
-
-export const jlcPartsEngine: PartsEngine = new JlcPartsEngine()
+export const jlcPartsEngine: JlcPcbPartsEngine = new JlcPcbPartsEngine()

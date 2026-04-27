@@ -1,4 +1,7 @@
-export type PlatformFetch = typeof fetch
+export type PlatformFetch = (
+  input: Parameters<typeof fetch>[0],
+  init?: Parameters<typeof fetch>[1],
+) => ReturnType<typeof fetch>
 
 export type FetchPartCircuitJsonParams = {
   supplierPartNumber?: string
@@ -6,6 +9,12 @@ export type FetchPartCircuitJsonParams = {
   platformFetch?: PlatformFetch
 }
 
-export type CreateJlcPartsEngineOptions = {
+export type EasyEdaProxyConfig = {
+  proxyEndpointUrl: string
+  headers?: Record<string, string>
+}
+
+export type JlcPcbPartsEngineOptions = {
   platformFetch?: PlatformFetch
+  easyEdaProxyConfig?: EasyEdaProxyConfig
 }

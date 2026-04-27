@@ -1,6 +1,9 @@
-import { describe, test, expect, beforeEach } from "bun:test"
+import { describe, test, expect, beforeEach, afterEach } from "bun:test"
 import { jlcPartsEngine, cache } from "../lib/jlc-parts-engine"
 import type { AnySourceComponent } from "circuit-json"
+
+const originalFetch = globalThis.fetch
+
 describe("jlcPartsEngine", () => {
   beforeEach(() => {
     cache.clear()
@@ -118,6 +121,10 @@ describe("jlcPartsEngine", () => {
       }
       return {} as Response
     }) as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
   })
 
   test("should find resistor parts", async () => {
