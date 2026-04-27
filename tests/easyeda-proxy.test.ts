@@ -1,107 +1,130 @@
 import { expect, test } from "bun:test"
 import {
   JlcPcbPartsEngine,
-  fetchWithEasyEdaProxy,
+  getFetchWithEasyEdaProxy,
 } from "../lib/jlc-parts-engine"
+import { FakeProxyServer } from "./fixtures/FakeProxyServer"
 
-type FetchCall = {
-  input: Parameters<typeof fetch>[0]
-  init?: RequestInit
+const getFirstCapturedRequest = (fakeProxyServer: FakeProxyServer) => {
+  const firstRequest = fakeProxyServer.capturedRequests[0]
+  if (!firstRequest) throw new Error("Expected at least one captured request")
+  return firstRequest
 }
 
-const createFetchSpy = () => {
-  const calls: FetchCall[] = []
-  const platformFetch = (async (
-    input: Parameters<typeof fetch>[0],
-    init?: RequestInit,
-  ) => {
-    calls.push({ input, init })
-    return new Response("{}", { status: 500 })
-  }) as typeof fetch
-  return { calls, platformFetch }
-}
+test("getFetchWithEasyEdaProxy routes EasyEDA API requests through /proxy", async () => {
+  const fakeProxyServer = new FakeProxyServer()
+  fakeProxyServer.start()
 
-test("fetchWithEasyEdaProxy routes EasyEDA API requests through /proxy", async () => {
-  const { calls, platformFetch } = createFetchSpy()
+  try {
+    const proxiedFetch = getFetchWithEasyEdaProxy({
+      platformFetch: globalThis.fetch,
+      easyEdaProxyConfig: {
+        proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
+        headers: { "x-api-key": "test-key" },
+      },
+    })
 
-  const proxiedFetch = fetchWithEasyEdaProxy({
-    platformFetch,
-    easyEdaProxyConfig: {
-      proxyEndpointUrl: "https://api.example.com/proxy",
-      headers: { "x-api-key": "test-key" },
-    },
-  })
+    const response = await proxiedFetch(
+      "https://easyeda.com/api/components/search",
+      {
+        method: "POST",
+        headers: {
+          origin: "https://easyeda.com",
+          host: "https://easyeda.com",
+          referer: "https://easyeda.com/editor",
+          "user-agent": "test-user-agent",
+          "content-type": "application/x-www-form-urlencoded",
+        },
+        body: "type=3&wd=C165948",
+      },
+    )
 
-  await proxiedFetch("https://easyeda.com/api/components/search", {
-    method: "POST",
-    headers: {
-      origin: "https://easyeda.com",
-      host: "https://easyeda.com",
-      referer: "https://easyeda.com/editor",
-      "user-agent": "test-user-agent",
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  })
+    expect(response.ok).toBe(true)
+    expect(fakeProxyServer.capturedRequests).toHaveLength(1)
 
-  expect(calls).toHaveLength(1)
-  const firstCall = calls[0]
-  if (!firstCall) throw new Error("Expected first proxied fetch call")
-
-  expect(firstCall.input).toBe("https://api.example.com/proxy")
-
-  const headers = new Headers(firstCall.init?.headers)
-  expect(headers.get("x-target-url")).toBe(
-    "https://easyeda.com/api/components/search",
-  )
-  expect(headers.get("x-sender-origin")).toBe("https://easyeda.com")
-  expect(headers.get("x-sender-host")).toBe("https://easyeda.com")
-  expect(headers.get("x-sender-referer")).toBe("https://easyeda.com/editor")
-  expect(headers.get("x-sender-user-agent")).toBe("test-user-agent")
-  expect(headers.get("x-api-key")).toBe("test-key")
+    const firstRequest = getFirstCapturedRequest(fakeProxyServer)
+    expect(firstRequest.pathname).toBe("/proxy")
+    expect(firstRequest.method).toBe("POST")
+    expect(firstRequest.headers.get("x-target-url")).toBe(
+      "https://easyeda.com/api/components/search",
+    )
+    expect(firstRequest.headers.get("x-sender-origin")).toBe(
+      "https://easyeda.com",
+    )
+    expect(firstRequest.headers.get("x-sender-host")).toBe(
+      "https://easyeda.com",
+    )
+    expect(firstRequest.headers.get("x-sender-referer")).toBe(
+      "https://easyeda.com/editor",
+    )
+    expect(firstRequest.headers.get("x-sender-user-agent")).toBe(
+      "test-user-agent",
+    )
+    expect(firstRequest.headers.get("x-api-key")).toBe("test-key")
+    expect(firstRequest.body).toContain("wd=C165948")
+  } finally {
+    await fakeProxyServer.stop()
+  }
 })
 
-test("fetchWithEasyEdaProxy leaves non-EasyEDA requests unchanged", async () => {
-  const { calls, platformFetch } = createFetchSpy()
+test("getFetchWithEasyEdaProxy leaves non-EasyEDA requests unchanged", async () => {
+  const fakeProxyServer = new FakeProxyServer()
+  fakeProxyServer.start()
 
-  const proxiedFetch = fetchWithEasyEdaProxy({
-    platformFetch,
-    easyEdaProxyConfig: {
-      proxyEndpointUrl: "https://api.example.com",
-    },
-  })
+  try {
+    const proxiedFetch = getFetchWithEasyEdaProxy({
+      platformFetch: globalThis.fetch,
+      easyEdaProxyConfig: {
+        proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
+      },
+    })
 
-  await proxiedFetch("https://example.com/api/data", { method: "GET" })
+    const response = await proxiedFetch(
+      `${fakeProxyServer.origin}/passthrough`,
+      {
+        method: "GET",
+      },
+    )
 
-  expect(calls).toHaveLength(1)
-  const firstCall = calls[0]
-  if (!firstCall) throw new Error("Expected first passthrough fetch call")
+    expect(response.ok).toBe(true)
+    expect(await response.text()).toBe("passthrough-ok")
+    expect(fakeProxyServer.capturedRequests).toHaveLength(1)
 
-  expect(firstCall.input).toBe("https://example.com/api/data")
-  expect(firstCall.init?.method).toBe("GET")
+    const firstRequest = getFirstCapturedRequest(fakeProxyServer)
+    expect(firstRequest.pathname).toBe("/passthrough")
+  } finally {
+    await fakeProxyServer.stop()
+  }
 })
 
 test("JlcPcbPartsEngine applies EasyEDA proxy to fetchPartCircuitJson", async () => {
-  const { calls, platformFetch } = createFetchSpy()
+  const fakeProxyServer = new FakeProxyServer({
+    proxyStatusCode: 500,
+  })
+  fakeProxyServer.start()
+
   const engine = new JlcPcbPartsEngine({
-    platformFetch,
+    platformFetch: globalThis.fetch,
     easyEdaProxyConfig: {
-      proxyEndpointUrl: "https://api.example.com/proxy",
+      proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
     },
   })
 
-  await expect(
-    engine.fetchPartCircuitJson!({
-      supplierPartNumber: "C165948",
-    }),
-  ).rejects.toThrow("Failed to search for the component")
+  try {
+    await expect(
+      engine.fetchPartCircuitJson!({
+        supplierPartNumber: "C165948",
+      }),
+    ).rejects.toThrow("Failed to search for the component")
 
-  expect(calls).toHaveLength(1)
-  const firstCall = calls[0]
-  if (!firstCall) throw new Error("Expected first engine fetch call")
+    expect(fakeProxyServer.capturedRequests).toHaveLength(1)
 
-  expect(firstCall.input).toBe("https://api.example.com/proxy")
-  const headers = new Headers(firstCall.init?.headers)
-  expect(headers.get("x-target-url")).toBe(
-    "https://easyeda.com/api/components/search",
-  )
+    const firstRequest = getFirstCapturedRequest(fakeProxyServer)
+    expect(firstRequest.pathname).toBe("/proxy")
+    expect(firstRequest.headers.get("x-target-url")).toBe(
+      "https://easyeda.com/api/components/search",
+    )
+  } finally {
+    await fakeProxyServer.stop()
+  }
 })

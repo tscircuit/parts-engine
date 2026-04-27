@@ -2,7 +2,7 @@ import { JlcPcbPartsEngine } from "./JlcPartsEngine"
 
 export { JlcPcbPartsEngine }
 export { cache } from "./jlc-parts-cache"
-export { fetchWithEasyEdaProxy } from "./fetchWithEasyEdaProxy"
+export { getFetchWithEasyEdaProxy } from "./getFetchWithEasyEdaProxy"
 export type {
   PlatformFetch,
   FetchPartCircuitJsonParams,
