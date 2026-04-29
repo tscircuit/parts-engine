@@ -19,6 +19,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
   }: JlcPcbPartsEngineOptions = {}) {
     this.defaultPlatformFetch = defaultPlatformFetch
     this.easyEdaProxyConfig = easyEdaProxyConfig
+    this.fetchPartCircuitJson = this.fetchPartCircuitJson.bind(this)
   }
 
   private getEasyEdaPlatformFetch(
