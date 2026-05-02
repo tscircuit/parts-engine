@@ -11,7 +11,7 @@
     "@tscircuit/props": "^0.0.513",
     "@types/bun": "latest",
     "circuit-json": "^0.0.421",
-    "easyeda": "^0.0.266",
+    "easyeda": "^0.0.267",
     "tsup": "^8.4.0"
   },
   "scripts": {

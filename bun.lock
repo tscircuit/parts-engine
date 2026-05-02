@@ -9,7 +9,7 @@
         "@tscircuit/props": "^0.0.513",
         "@types/bun": "latest",
         "circuit-json": "^0.0.421",
-        "easyeda": "^0.0.266",
+        "easyeda": "^0.0.267",
         "tsup": "^8.4.0",
       },
       "peerDependencies": {
@@ -182,7 +182,7 @@
 
     "eastasianwidth": ["eastasianwidth@0.2.0", "", {}, "sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA=="],
 
-    "easyeda": ["easyeda@0.0.266", "", { "peerDependencies": { "typescript": "^5.5.2", "zod": "3" }, "bin": { "easyeda-converter": "dist/main.cjs", "easyeda": "dist/main.cjs" } }, "sha512-pT4PA09jLdVVSL46QaV/aGfcRTGFgEtxIc7axmVzxt4YiavZbhVxyuqGfb1OV3FeMh0TofJqyjPESAxGMPDwNQ=="],
+    "easyeda": ["easyeda@0.0.267", "", { "peerDependencies": { "typescript": "^5.5.2", "zod": "3" }, "bin": { "easyeda-converter": "dist/main.cjs", "easyeda": "dist/main.cjs" } }, "sha512-bBIIK6h5qKA0Ks6VgGrB68AMDsn7GhHJyF53q2Hi480Rfni4HXdM3puqBrXlBG96V7FsyQfa9U1r93F6K+hHtw=="],
 
     "emoji-regex": ["emoji-regex@9.2.2", "", {}, "sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg=="],
 
