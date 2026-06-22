@@ -128,3 +128,50 @@ test("JlcPcbPartsEngine applies EasyEDA proxy to fetchPartCircuitJson", async ()
     await fakeProxyServer.stop()
   }
 })
+
+test("fetchPartCircuitJson reports invalid EasyEDA payloads with part context", async () => {
+  const engine = new JlcPcbPartsEngine({
+    platformFetch: (async (url: string) => {
+      if (url.includes("/api/components/search")) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            result: {
+              lists: {
+                lcsc: [
+                  {
+                    uuid: "bad-component-uuid",
+                    dataStr: {
+                      head: {
+                        c_para: {
+                          "Supplier Part": "C123",
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          }),
+          { status: 200 },
+        )
+      }
+
+      return new Response(
+        JSON.stringify({
+          result: {
+            uuid: "bad-component-uuid",
+            lcsc: { number: "C123" },
+          },
+        }),
+        { status: 200 },
+      )
+    }) as unknown as typeof fetch,
+  })
+
+  await expect(
+    engine.fetchPartCircuitJson!({
+      supplierPartNumber: "C123",
+    }),
+  ).rejects.toThrow("Invalid EasyEDA payload for C123")
+})

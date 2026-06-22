@@ -1,8 +1,8 @@
 import type { PartsEngine } from "@tscircuit/props"
 import {
-  fetchEasyEDAComponent,
   EasyEdaJsonSchema,
   convertEasyEdaJsonToCircuitJson,
+  fetchEasyEDAComponent,
 } from "easyeda/browser"
 import { getJlcpcbPackageName } from "../footprint-translators/index"
 import { getFetchWithEasyEdaProxy } from "./getFetchWithEasyEdaProxy"
@@ -301,7 +301,22 @@ export class JlcPcbPartsEngine implements PartsEngine {
         fetch: easyEdaPlatformFetch as typeof fetch,
       },
     )
-    const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
+    const parsedResult = EasyEdaJsonSchema.safeParse(rawEasyEdaJson)
+    if (!parsedResult.success) {
+      const issueSummary = parsedResult.error.issues
+        .slice(0, 3)
+        .map((issue) => {
+          const path = issue.path.length > 0 ? issue.path.join(".") : "<root>"
+          return `${path}: ${issue.message}`
+        })
+        .join("; ")
+
+      throw new Error(
+        `Invalid EasyEDA payload for ${resolvedSupplierPartNumber}: ${issueSummary}`,
+      )
+    }
+
+    const parsed = parsedResult.data
     return convertEasyEdaJsonToCircuitJson(parsed)
   }
 }
