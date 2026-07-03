@@ -506,4 +506,34 @@ describe("jlcPartsEngine", () => {
       jlcpcb: ["C2222", "C4444", "C1111"],
     })
   })
+
+  test("fetchPartCircuitJson resolves an exact mfr match, not the first fuzzy hit", async () => {
+    const easyEdaRequestBodies: string[] = []
+    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+      if (String(url).includes("/components/list")) {
+        return {
+          json: async () => ({
+            components: [
+              { lcsc: 2907321, mfr: "FRC0805J331 TS" },
+              { lcsc: 165948, mfr: "TYPE-C-31-M-12" },
+            ],
+          }),
+        } as Response
+      }
+      // easyeda's search posts the supplier part number in the request body
+      easyEdaRequestBodies.push(String(init?.body ?? ""))
+      return {} as Response
+    }) as any
+
+    // The easyeda fetch downstream gets a stub response and throws; we only
+    // care which supplier part number it was asked for.
+    try {
+      await jlcPartsEngine.fetchPartCircuitJson!({
+        manufacturerPartNumber: "TYPE-C-31-M-12",
+      })
+    } catch {}
+
+    expect(easyEdaRequestBodies.some((b) => b.includes("C165948"))).toBe(true)
+    expect(easyEdaRequestBodies.some((b) => b.includes("C2907321"))).toBe(false)
+  })
 })

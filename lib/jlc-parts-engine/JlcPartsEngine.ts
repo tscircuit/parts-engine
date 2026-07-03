@@ -288,8 +288,16 @@ export class JlcPcbPartsEngine implements PartsEngine {
       const { components } = await getJlcPartsCached("components", {
         search: manufacturerPartNumber,
       })
-      resolvedSupplierPartNumber = components?.[0]
-        ? `C${components[0].lcsc}`
+      // The search is fuzzy and its ranking can put unrelated parts first, so
+      // prefer an exact manufacturer-part-number match over the top result.
+      const exactMatch = components?.find(
+        (c: any) =>
+          typeof c.mfr === "string" &&
+          c.mfr.toLowerCase() === manufacturerPartNumber.toLowerCase(),
+      )
+      const resolvedComponent = exactMatch ?? components?.[0]
+      resolvedSupplierPartNumber = resolvedComponent
+        ? `C${resolvedComponent.lcsc}`
         : undefined
     }
 
