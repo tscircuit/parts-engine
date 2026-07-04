@@ -3,6 +3,11 @@ import { jlcPartsEngine, cache } from "../lib/jlc-parts-engine"
 import type { AnySourceComponent } from "circuit-json"
 
 const originalFetch = globalThis.fetch
+const getFirstFetchedUrl = (fetchedUrls: string[]) => {
+  const firstFetchedUrl = fetchedUrls[0]
+  if (!firstFetchedUrl) throw new Error("Expected at least one fetched URL")
+  return new URL(firstFetchedUrl)
+}
 
 describe("jlcPartsEngine", () => {
   let fetchedUrls: string[]
@@ -207,7 +212,7 @@ describe("jlcPartsEngine", () => {
       jlcpcb: ["C3456", "C7890", "C1234"],
     })
 
-    const headerUrl = new URL(fetchedUrls[0])
+    const headerUrl = getFirstFetchedUrl(fetchedUrls)
     expect(headerUrl.pathname).toBe("/headers/list")
     expect(headerUrl.searchParams.get("pitch")).toBe("2.54")
     expect(headerUrl.searchParams.get("num_pins")).toBe("8")
@@ -233,7 +238,7 @@ describe("jlcPartsEngine", () => {
       jlcpcb: ["C3456", "C7890", "C1234"],
     })
 
-    const headerUrl = new URL(fetchedUrls[0])
+    const headerUrl = getFirstFetchedUrl(fetchedUrls)
     expect(headerUrl.pathname).toBe("/headers/list")
     expect(headerUrl.searchParams.get("pitch")).toBe("2.54")
     expect(headerUrl.searchParams.get("num_pins")).toBe("6")
@@ -244,12 +249,12 @@ describe("jlcPartsEngine", () => {
     const header = {
       type: "source_component",
       ftype: "simple_pin_header",
-      pinCount: 4,
+      pin_count: 4,
       gender: "unpopulated",
       rightAngle: true,
       source_component_id: "source_component_0",
       name: "J3",
-    } as AnySourceComponent
+    } as unknown as AnySourceComponent
 
     const result = await jlcPartsEngine.findPart({
       sourceComponent: header,
@@ -260,7 +265,7 @@ describe("jlcPartsEngine", () => {
       jlcpcb: ["C3456", "C7890", "C1234"],
     })
 
-    const headerUrl = new URL(fetchedUrls[0])
+    const headerUrl = getFirstFetchedUrl(fetchedUrls)
     expect(headerUrl.pathname).toBe("/headers/list")
     expect(headerUrl.searchParams.get("pitch")).toBe("1.27")
     expect(headerUrl.searchParams.get("num_pins")).toBe("4")

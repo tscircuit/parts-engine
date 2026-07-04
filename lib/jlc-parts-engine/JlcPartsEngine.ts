@@ -10,6 +10,9 @@ import { getPinHeaderSearchParams } from "./get-pin-header-search-params"
 import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
 import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 
+const normalizePartNumber = (partNumber: unknown) =>
+  typeof partNumber === "string" ? partNumber.trim().toLowerCase() : undefined
+
 export class JlcPcbPartsEngine implements PartsEngine {
   private readonly defaultPlatformFetch: JlcPcbPartsEngineOptions["platformFetch"]
   private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxyConfig"]
@@ -276,8 +279,17 @@ export class JlcPcbPartsEngine implements PartsEngine {
       const { components } = await getJlcPartsCached("components", {
         search: manufacturerPartNumber,
       })
-      resolvedSupplierPartNumber = components?.[0]
-        ? `C${components[0].lcsc}`
+      const normalizedManufacturerPartNumber = normalizePartNumber(
+        manufacturerPartNumber,
+      )
+      const exactManufacturerPartMatch = components?.find(
+        (component: any) =>
+          normalizePartNumber(component.mfr) ===
+          normalizedManufacturerPartNumber,
+      )
+      const componentMatch = exactManufacturerPartMatch ?? components?.[0]
+      resolvedSupplierPartNumber = componentMatch
+        ? `C${componentMatch.lcsc}`
         : undefined
     }
 
