@@ -6,6 +6,7 @@ import {
 } from "easyeda/browser"
 import { getJlcpcbPackageName } from "../footprint-translators/index"
 import { getFetchWithEasyEdaProxy } from "./getFetchWithEasyEdaProxy"
+import { getPinHeaderSearchParams } from "./get-pin-header-search-params"
 import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
 import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 
@@ -76,22 +77,9 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_pin_header"
     ) {
-      let pitch: number | undefined
-      if (footprinterString?.includes("_p")) {
-        pitch = Number(footprinterString.split("_p")[1])
-      }
       const { headers } = await getJlcPartsCached(
         "headers",
-        pitch
-          ? {
-              pitch: pitch,
-              num_pins: sourceComponent.pin_count,
-              gender: sourceComponent.gender,
-            }
-          : {
-              num_pins: sourceComponent.pin_count,
-              gender: sourceComponent.gender,
-            },
+        getPinHeaderSearchParams(sourceComponent, footprinterString),
       )
       return {
         jlcpcb: withBasicPartPreference(headers)

@@ -5,10 +5,14 @@ import type { AnySourceComponent } from "circuit-json"
 const originalFetch = globalThis.fetch
 
 describe("jlcPartsEngine", () => {
+  let fetchedUrls: string[]
+
   beforeEach(() => {
     cache.clear()
+    fetchedUrls = []
     // Reset fetch fake between tests
     globalThis.fetch = (async (url: string) => {
+      fetchedUrls.push(url)
       if (url.includes("/resistors/")) {
         return {
           json: async () => ({
@@ -202,6 +206,66 @@ describe("jlcPartsEngine", () => {
     expect(result).toEqual({
       jlcpcb: ["C3456", "C7890", "C1234"],
     })
+
+    const headerUrl = new URL(fetchedUrls[0])
+    expect(headerUrl.pathname).toBe("/headers/list")
+    expect(headerUrl.searchParams.get("pitch")).toBe("2.54")
+    expect(headerUrl.searchParams.get("num_pins")).toBe("8")
+    expect(headerUrl.searchParams.get("gender")).toBe("male")
+  })
+
+  test("should find pin header parts with generated pinrow footprints", async () => {
+    const header: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_pin_header",
+      pin_count: 6,
+      gender: "female",
+      source_component_id: "source_component_0",
+      name: "J2",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+      footprinterString: "pinrow6_rows1_p2.54mm_id1mm_od1.5mm_female",
+    })
+
+    expect(result).toEqual({
+      jlcpcb: ["C3456", "C7890", "C1234"],
+    })
+
+    const headerUrl = new URL(fetchedUrls[0])
+    expect(headerUrl.pathname).toBe("/headers/list")
+    expect(headerUrl.searchParams.get("pitch")).toBe("2.54")
+    expect(headerUrl.searchParams.get("num_pins")).toBe("6")
+    expect(headerUrl.searchParams.get("gender")).toBe("female")
+  })
+
+  test("should pass right-angle pin header filters when present", async () => {
+    const header = {
+      type: "source_component",
+      ftype: "simple_pin_header",
+      pinCount: 4,
+      gender: "unpopulated",
+      rightAngle: true,
+      source_component_id: "source_component_0",
+      name: "J3",
+    } as AnySourceComponent
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+      footprinterString: "pinrow4_rows1_p1.27mm_id0.65mm_od1mm",
+    })
+
+    expect(result).toEqual({
+      jlcpcb: ["C3456", "C7890", "C1234"],
+    })
+
+    const headerUrl = new URL(fetchedUrls[0])
+    expect(headerUrl.pathname).toBe("/headers/list")
+    expect(headerUrl.searchParams.get("pitch")).toBe("1.27")
+    expect(headerUrl.searchParams.get("num_pins")).toBe("4")
+    expect(headerUrl.searchParams.get("gender")).toBeNull()
+    expect(headerUrl.searchParams.get("is_right_angle")).toBe("true")
   })
 
   // potentiometers
