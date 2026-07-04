@@ -575,4 +575,37 @@ describe("jlcPartsEngine", () => {
       jlcpcb: ["C2222", "C4444", "C1111"],
     })
   })
+
+  // The simple_switch branch passes sourceComponent.type (always the literal
+  // "source_component") as switch_type, so the API is queried with
+  // switch_type=source_component and returns zero switches. Lives inside this
+  // describe so afterEach restores the real fetch even when the assertion
+  // throws.
+  test.failing(
+    "switch search does not send switch_type=source_component",
+    async () => {
+      let requestedUrl = ""
+      globalThis.fetch = (async (url: string) => {
+        requestedUrl = url
+        return {
+          json: async () => ({ switches: [{ lcsc: "2345" }] }),
+        } as Response
+      }) as typeof fetch
+
+      const sw = {
+        type: "source_component",
+        ftype: "simple_switch",
+        source_component_id: "source_component_0",
+        name: "SW1",
+      } as AnySourceComponent
+
+      await jlcPartsEngine.findPart({
+        sourceComponent: sw,
+        footprinterString: "pushbutton",
+      })
+
+      expect(requestedUrl).toContain("/switches/")
+      expect(requestedUrl).not.toContain("switch_type=source_component")
+    },
+  )
 })
