@@ -284,8 +284,15 @@ export class JlcPcbPartsEngine implements PartsEngine {
       )
       const exactManufacturerPartMatch = components?.find(
         (component: any) =>
+          normalizePartNumber(
+            component.mfr_part_number ??
+              component.mfr_pn ??
+              component.mfrPartNumber ??
+              component.extra?.mfr_part_number ??
+              component.mfr,
+          ) === normalizedManufacturerPartNumber ||
           normalizePartNumber(component.mfr) ===
-          normalizedManufacturerPartNumber,
+            normalizedManufacturerPartNumber,
       )
       const componentMatch = exactManufacturerPartMatch ?? components?.[0]
       resolvedSupplierPartNumber = componentMatch
