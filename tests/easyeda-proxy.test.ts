@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test"
 import {
-  type EasyEdaProxyResponseInfo,
   JlcPcbPartsEngine,
   getFetchWithEasyEdaProxy,
 } from "../lib/jlc-parts-engine"
@@ -98,36 +97,27 @@ test("getFetchWithEasyEdaProxy leaves non-EasyEDA requests unchanged", async () 
   }
 })
 
-test("getFetchWithEasyEdaProxy reports proxy response metadata", async () => {
+test("JlcPcbPartsEngine preserves the proxy error code for unauthorized requests", async () => {
   const fakeProxyServer = new FakeProxyServer({
-    proxyStatusCode: 403,
+    proxyStatusCode: 401,
+    proxyErrorCode: "session_expired",
   })
   fakeProxyServer.start()
-  const proxyResponses: EasyEdaProxyResponseInfo[] = []
+  const engine = new JlcPcbPartsEngine({
+    platformFetch: globalThis.fetch,
+    easyEdaProxyConfig: {
+      proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
+    },
+  })
 
   try {
-    const proxiedFetch = getFetchWithEasyEdaProxy({
-      platformFetch: globalThis.fetch,
-      easyEdaProxyConfig: {
-        proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
-        onProxyResponse: (response) => {
-          proxyResponses.push(response)
-        },
-      },
-    })
-
-    const response = await proxiedFetch(
-      "https://easyeda.com/api/components/search",
+    await expect(
+      engine.fetchPartCircuitJson!({
+        supplierPartNumber: "C165948",
+      }),
+    ).rejects.toThrow(
+      "EasyEDA proxy request failed: session_expired (HTTP 401)",
     )
-
-    expect(response.status).toBe(403)
-    expect(proxyResponses).toEqual([
-      {
-        status: 403,
-        statusText: "Forbidden",
-        targetUrl: "https://easyeda.com/api/components/search",
-      },
-    ])
   } finally {
     await fakeProxyServer.stop()
   }
