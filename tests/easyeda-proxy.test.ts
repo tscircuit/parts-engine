@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test"
 import {
+  type EasyEdaProxyResponseInfo,
   JlcPcbPartsEngine,
   getFetchWithEasyEdaProxy,
 } from "../lib/jlc-parts-engine"
@@ -102,11 +103,7 @@ test("getFetchWithEasyEdaProxy reports proxy response metadata", async () => {
     proxyStatusCode: 403,
   })
   fakeProxyServer.start()
-  let proxyResponse: {
-    status: number
-    statusText: string
-    targetUrl: string
-  } | null = null
+  const proxyResponses: EasyEdaProxyResponseInfo[] = []
 
   try {
     const proxiedFetch = getFetchWithEasyEdaProxy({
@@ -114,7 +111,7 @@ test("getFetchWithEasyEdaProxy reports proxy response metadata", async () => {
       easyEdaProxyConfig: {
         proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
         onProxyResponse: (response) => {
-          proxyResponse = response
+          proxyResponses.push(response)
         },
       },
     })
@@ -124,11 +121,13 @@ test("getFetchWithEasyEdaProxy reports proxy response metadata", async () => {
     )
 
     expect(response.status).toBe(403)
-    expect(proxyResponse).toEqual({
-      status: 403,
-      statusText: "Forbidden",
-      targetUrl: "https://easyeda.com/api/components/search",
-    })
+    expect(proxyResponses).toEqual([
+      {
+        status: 403,
+        statusText: "Forbidden",
+        targetUrl: "https://easyeda.com/api/components/search",
+      },
+    ])
   } finally {
     await fakeProxyServer.stop()
   }
