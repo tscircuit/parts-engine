@@ -97,6 +97,35 @@ test("getFetchWithEasyEdaProxy leaves non-EasyEDA requests unchanged", async () 
   }
 })
 
+test("getFetchWithEasyEdaProxy reports a 401 proxy response", async () => {
+  const fakeProxyServer = new FakeProxyServer({
+    proxyStatusCode: 401,
+  })
+  fakeProxyServer.start()
+  let unauthorizedResponseCount = 0
+
+  try {
+    const proxiedFetch = getFetchWithEasyEdaProxy({
+      platformFetch: globalThis.fetch,
+      easyEdaProxyConfig: {
+        proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
+        onUnauthorized: () => {
+          unauthorizedResponseCount += 1
+        },
+      },
+    })
+
+    const response = await proxiedFetch(
+      "https://easyeda.com/api/components/search",
+    )
+
+    expect(response.status).toBe(401)
+    expect(unauthorizedResponseCount).toBe(1)
+  } finally {
+    await fakeProxyServer.stop()
+  }
+})
+
 test("JlcPcbPartsEngine applies EasyEDA proxy to fetchPartCircuitJson", async () => {
   const fakeProxyServer = new FakeProxyServer({
     proxyStatusCode: 500,

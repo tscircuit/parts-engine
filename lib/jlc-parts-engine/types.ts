@@ -12,6 +12,7 @@ export type FetchPartCircuitJsonParams = {
 export type EasyEdaProxyConfig = {
   proxyEndpointUrl: string
   headers?: Record<string, string>
+  onUnauthorized?: () => void
 }
 
 export type JlcPcbPartsEngineOptions = {
