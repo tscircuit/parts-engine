@@ -109,9 +109,11 @@ export const getFetchWithEasyEdaProxy = ({
       signal: requestInit?.signal,
     })
 
-    if (response.status === 401) {
-      easyEdaProxyConfig.onUnauthorized?.()
-    }
+    easyEdaProxyConfig.onProxyResponse?.({
+      status: response.status,
+      statusText: response.statusText,
+      targetUrl: targetRequestUrl,
+    })
 
     return response
   }

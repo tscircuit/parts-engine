@@ -97,20 +97,24 @@ test("getFetchWithEasyEdaProxy leaves non-EasyEDA requests unchanged", async () 
   }
 })
 
-test("getFetchWithEasyEdaProxy reports a 401 proxy response", async () => {
+test("getFetchWithEasyEdaProxy reports proxy response metadata", async () => {
   const fakeProxyServer = new FakeProxyServer({
-    proxyStatusCode: 401,
+    proxyStatusCode: 403,
   })
   fakeProxyServer.start()
-  let unauthorizedResponseCount = 0
+  let proxyResponse: {
+    status: number
+    statusText: string
+    targetUrl: string
+  } | null = null
 
   try {
     const proxiedFetch = getFetchWithEasyEdaProxy({
       platformFetch: globalThis.fetch,
       easyEdaProxyConfig: {
         proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
-        onUnauthorized: () => {
-          unauthorizedResponseCount += 1
+        onProxyResponse: (response) => {
+          proxyResponse = response
         },
       },
     })
@@ -119,8 +123,12 @@ test("getFetchWithEasyEdaProxy reports a 401 proxy response", async () => {
       "https://easyeda.com/api/components/search",
     )
 
-    expect(response.status).toBe(401)
-    expect(unauthorizedResponseCount).toBe(1)
+    expect(response.status).toBe(403)
+    expect(proxyResponse).toEqual({
+      status: 403,
+      statusText: "Forbidden",
+      targetUrl: "https://easyeda.com/api/components/search",
+    })
   } finally {
     await fakeProxyServer.stop()
   }

@@ -7,6 +7,7 @@ export type {
   PlatformFetch,
   FetchPartCircuitJsonParams,
   EasyEdaProxyConfig,
+  EasyEdaProxyResponseInfo,
   JlcPcbPartsEngineOptions,
 } from "./types"
 
