@@ -102,11 +102,28 @@ export const getFetchWithEasyEdaProxy = ({
       ? undefined
       : await mergedTargetRequest.clone().arrayBuffer()
 
-    return upstreamFetch(easyEdaProxyConfig.proxyEndpointUrl, {
+    const response = await upstreamFetch(easyEdaProxyConfig.proxyEndpointUrl, {
       method: mergedTargetRequest.method,
       headers: proxyRequestHeaders,
       body: proxyRequestBody,
       signal: requestInit?.signal,
     })
+
+    if (response.status === 401) {
+      const proxyErrorResponse: unknown = await response
+        .json()
+        .catch(() => null)
+      const errorCode =
+        typeof proxyErrorResponse === "object" &&
+        proxyErrorResponse !== null &&
+        "error_code" in proxyErrorResponse &&
+        typeof proxyErrorResponse.error_code === "string"
+          ? proxyErrorResponse.error_code
+          : "unauthorized"
+
+      throw new Error(`EasyEDA proxy request failed: ${errorCode} (HTTP 401)`)
+    }
+
+    return response
   }
 }

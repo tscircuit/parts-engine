@@ -7,12 +7,14 @@ export type CapturedHttpRequest = {
 
 type FakeProxyServerOptions = {
   proxyStatusCode?: number
+  proxyErrorCode?: string
 }
 
 const METHODS_WITHOUT_BODY = new Set(["GET", "HEAD"])
 
 export class FakeProxyServer {
   private readonly proxyStatusCode: number
+  private readonly proxyErrorCode?: string
   private readonly capturedRequestsInternal: CapturedHttpRequest[] = []
   private server: Bun.Server | null = null
 
@@ -20,6 +22,7 @@ export class FakeProxyServer {
 
   constructor(options: FakeProxyServerOptions = {}) {
     this.proxyStatusCode = options.proxyStatusCode ?? 200
+    this.proxyErrorCode = options.proxyErrorCode
     this.handleRequest = this.handleRequest.bind(this)
   }
 
@@ -61,7 +64,11 @@ export class FakeProxyServer {
 
     if (requestUrl.pathname === "/proxy") {
       return new Response(
-        JSON.stringify({ proxied: this.proxyStatusCode === 200 }),
+        JSON.stringify(
+          this.proxyErrorCode
+            ? { error_code: this.proxyErrorCode }
+            : { proxied: this.proxyStatusCode === 200 },
+        ),
         {
           status: this.proxyStatusCode,
           headers: { "content-type": "application/json" },

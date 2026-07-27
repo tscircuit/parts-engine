@@ -97,6 +97,32 @@ test("getFetchWithEasyEdaProxy leaves non-EasyEDA requests unchanged", async () 
   }
 })
 
+test("JlcPcbPartsEngine preserves the proxy error code for unauthorized requests", async () => {
+  const fakeProxyServer = new FakeProxyServer({
+    proxyStatusCode: 401,
+    proxyErrorCode: "session_expired",
+  })
+  fakeProxyServer.start()
+  const engine = new JlcPcbPartsEngine({
+    platformFetch: globalThis.fetch,
+    easyEdaProxyConfig: {
+      proxyEndpointUrl: `${fakeProxyServer.origin}/proxy`,
+    },
+  })
+
+  try {
+    await expect(
+      engine.fetchPartCircuitJson!({
+        supplierPartNumber: "C165948",
+      }),
+    ).rejects.toThrow(
+      "EasyEDA proxy request failed: session_expired (HTTP 401)",
+    )
+  } finally {
+    await fakeProxyServer.stop()
+  }
+})
+
 test("JlcPcbPartsEngine applies EasyEDA proxy to fetchPartCircuitJson", async () => {
   const fakeProxyServer = new FakeProxyServer({
     proxyStatusCode: 500,
