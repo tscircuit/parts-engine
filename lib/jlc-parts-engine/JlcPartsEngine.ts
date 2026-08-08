@@ -214,7 +214,6 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.ftype === "simple_switch"
     ) {
       const { switches } = await getJlcPartsCached("switches", {
-        switch_type: sourceComponent.type,
         package: jlcpcbPackage,
       })
       return {
