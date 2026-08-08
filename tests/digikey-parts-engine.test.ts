@@ -46,10 +46,12 @@ describe("DigiKeyPartsEngine", () => {
       digikey: ["HIGH-STOCK-ND", "LOW-STOCK-ND"],
     })
     expect(requests).toHaveLength(1)
-    expect(requests[0].pathname).toBe("/resistors/list")
-    expect(requests[0].searchParams.get("resistance")).toBe("10000")
-    expect(requests[0].searchParams.get("package")).toBe("0402")
-    expect(requests[0].searchParams.get("json")).toBe("true")
+    const request = requests[0]
+    if (!request) throw new Error("Expected one DigiKey search request")
+    expect(request.pathname).toBe("/resistors/list")
+    expect(request.searchParams.get("resistance")).toBe("10000")
+    expect(request.searchParams.get("package")).toBe("0402")
+    expect(request.searchParams.get("json")).toBe("true")
   })
 
   it("caches identical lookups in-process", async () => {
