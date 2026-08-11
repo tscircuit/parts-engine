@@ -78,8 +78,16 @@ test("fetchPartCircuitJson parses C11337 whitespace-only text fields", async () 
 
   expect(conversionResult).toMatchInlineSnapshot(`
     {
-      "message": "[ { "received": " ", "code": "invalid_enum_value", "options": [ "normal", "italic" ], "path": [ "fontStyle" ], "message": "Invalid enum value. Expected 'normal' | 'italic', received ' '" } ]",
-      "status": "error",
+      "elementTypeCounts": {
+        "cad_component": 1,
+        "pcb_component": 1,
+        "pcb_courtyard_outline": 1,
+        "pcb_silkscreen_path": 9,
+        "pcb_smtpad": 5,
+        "source_component": 1,
+        "source_port": 5,
+      },
+      "status": "success",
     }
   `)
 })
