@@ -6,6 +6,10 @@ import {
 } from "easyeda/browser"
 import { getJlcpcbPackageName } from "../footprint-translators/index"
 import { getFetchWithEasyEdaProxy } from "./getFetchWithEasyEdaProxy"
+import {
+  getJstConnectorSearchConfig,
+  isCompatiblePcbMountJstConnector,
+} from "./get-jst-connector-search-config"
 import { getPinHeaderSearchParams } from "./get-pin-header-search-params"
 import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
 import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
@@ -258,6 +262,33 @@ export class JlcPcbPartsEngine implements PartsEngine {
       return {
         jlcpcb: withBasicPartPreference(usb_c_connectors)
           .map((c: any) => `C${c.lcsc}`)
+          .slice(0, 3),
+      }
+    } else if (
+      sourceComponent.type === "source_component" &&
+      sourceComponent.ftype === "simple_connector"
+    ) {
+      const searchConfig = getJstConnectorSearchConfig(sourceComponent.standard)
+
+      if (!searchConfig || !sourceComponent.pin_count) {
+        return {}
+      }
+
+      const { jst_connectors } = await getJlcPartsCached("jst_connectors", {
+        pitch_mm: searchConfig.pitchMm,
+        num_pins: sourceComponent.pin_count,
+      })
+      const compatiblePcbMountConnectors = jst_connectors?.filter(
+        (connector: any) =>
+          isCompatiblePcbMountJstConnector(
+            connector,
+            searchConfig.compatibleReferenceSeries,
+          ),
+      )
+
+      return {
+        jlcpcb: withBasicPartPreference(compatiblePcbMountConnectors)
+          .map((connector: any) => `C${connector.lcsc}`)
           .slice(0, 3),
       }
     }

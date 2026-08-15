@@ -128,6 +128,34 @@ describe("jlcPartsEngine", () => {
           }),
         } as Response
       }
+      if (url.includes("/jst_connectors/")) {
+        return {
+          json: async () => ({
+            jst_connectors: [
+              {
+                lcsc: "398543",
+                reference_series: "PH",
+                attributes: '{"Holes Structure":"1x2P"}',
+              },
+              {
+                lcsc: "495675",
+                reference_series: "PA",
+                attributes: '{"Pins Structure":"1x2P"}',
+              },
+              {
+                lcsc: "131337",
+                reference_series: "PH",
+                attributes: '{"Pins Structure":"1x2P"}',
+              },
+              {
+                lcsc: "173752",
+                reference_series: "PH",
+                attributes: { "Pins Structure": "1x2P" },
+              },
+            ],
+          }),
+        } as Response
+      }
       return {} as Response
     }) as unknown as typeof fetch
   })
@@ -498,6 +526,47 @@ describe("jlcPartsEngine", () => {
     expect(result).toEqual({
       jlcpcb: ["C165948", "C165949", "C165950"],
     })
+  })
+
+  test("should find PCB-mount JST connector parts by family and pin count", async () => {
+    const connector: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_connector",
+      standard: "jst_ph",
+      pin_count: 2,
+      source_component_id: "source_component_0",
+      name: "J2",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: connector,
+    })
+
+    expect(result).toEqual({
+      jlcpcb: ["C131337", "C173752"],
+    })
+
+    const connectorUrl = getFirstFetchedUrl(fetchedUrls)
+    expect(connectorUrl.pathname).toBe("/jst_connectors/list")
+    expect(connectorUrl.searchParams.get("pitch_mm")).toBe("2")
+    expect(connectorUrl.searchParams.get("num_pins")).toBe("2")
+  })
+
+  test("should skip JST searches without a pin count", async () => {
+    const connector: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_connector",
+      standard: "jst_ph",
+      source_component_id: "source_component_0",
+      name: "J3",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: connector,
+    })
+
+    expect(result).toEqual({})
+    expect(fetchedUrls).toHaveLength(0)
   })
 
   test("should return empty object for unknown component types", async () => {
