@@ -1,6 +1,10 @@
 {
   "name": "@tscircuit/parts-engine",
   "version": "0.0.29",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tscircuit/parts-engine"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "files": [
