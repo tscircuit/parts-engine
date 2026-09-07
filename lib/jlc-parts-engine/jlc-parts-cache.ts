@@ -14,6 +14,9 @@ export const getJlcPartsCached = async (name: any, params: any) => {
     const response = await fetch(
       `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`,
     )
+    if (!response.ok) {
+      throw new Error(`JLC parts lookup failed with HTTP ${response.status}`)
+    }
     return response.json()
   })()
   cache.set(paramString, requestPromise)
