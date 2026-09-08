@@ -10,12 +10,24 @@ export const getJlcPartsCached = async (name: any, params: any) => {
     return cache.get(paramString)
   }
 
-  const response = await fetch(
-    `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`,
-  )
-  const responseJson = await response.json()
-  cache.set(paramString, responseJson)
-  return responseJson
+  const requestPromise = (async () => {
+    const response = await fetch(
+      `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`,
+    )
+    return response.json()
+  })()
+  cache.set(paramString, requestPromise)
+
+  try {
+    const responseJson = await requestPromise
+    cache.set(paramString, responseJson)
+    return responseJson
+  } catch (error) {
+    if (cache.get(paramString) === requestPromise) {
+      cache.delete(paramString)
+    }
+    throw error
+  }
 }
 
 export const withBasicPartPreference = (parts: any[] | undefined) => {
