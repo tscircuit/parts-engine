@@ -106,7 +106,7 @@ export const getFetchWithEasyEdaProxy = ({
       method: mergedTargetRequest.method,
       headers: proxyRequestHeaders,
       body: proxyRequestBody,
-      signal: requestInit?.signal,
+      signal: mergedTargetRequest.signal,
     })
 
     if (response.status === 401) {
