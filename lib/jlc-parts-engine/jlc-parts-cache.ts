@@ -1,33 +1,47 @@
 export const cache = new Map<string, any>()
-const pendingRequests = new Map<string, Promise<any>>()
+
+type JlcPartsQueryString = string & {
+  readonly __brand: "JlcPartsQueryString"
+}
+
+type JlcPartsLookupResult = Record<
+  string,
+  Array<Record<string, unknown>> | undefined
+>
+
+const pendingRequestPromiseByQueryString = new Map<
+  JlcPartsQueryString,
+  Promise<JlcPartsLookupResult>
+>()
 
 export const getJlcPartsCached = async (name: any, params: any) => {
   const paramString = new URLSearchParams({
     ...params,
     json: "true",
-  }).toString()
+  }).toString() as JlcPartsQueryString
 
   if (cache.has(paramString)) {
     return cache.get(paramString)
   }
 
-  const pendingRequest = pendingRequests.get(paramString)
-  if (pendingRequest) return pendingRequest
+  const pendingRequestPromise =
+    pendingRequestPromiseByQueryString.get(paramString)
+  if (pendingRequestPromise) return pendingRequestPromise
 
-  const request = (async () => {
+  const requestPromise = (async (): Promise<JlcPartsLookupResult> => {
     const response = await fetch(
       `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`,
     )
-    const responseJson = await response.json()
+    const responseJson = (await response.json()) as JlcPartsLookupResult
     cache.set(paramString, responseJson)
     return responseJson
   })()
-  pendingRequests.set(paramString, request)
+  pendingRequestPromiseByQueryString.set(paramString, requestPromise)
 
   try {
-    return await request
+    return await requestPromise
   } finally {
-    pendingRequests.delete(paramString)
+    pendingRequestPromiseByQueryString.delete(paramString)
   }
 }
 
