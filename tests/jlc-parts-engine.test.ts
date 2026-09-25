@@ -353,7 +353,7 @@ describe("jlcPartsEngine", () => {
     })
   })
 
-  test("repro: green LED search does not pass its color to jlcsearch", async () => {
+  test("passes the requested green LED color to jlcsearch", async () => {
     const greenLed: AnySourceComponent = {
       type: "source_component",
       ftype: "simple_led",
@@ -373,9 +373,8 @@ describe("jlcPartsEngine", () => {
       selectedSupplierPartNumbers: result.jlcpcb,
     }).toMatchInlineSnapshot(`
       {
-        "requestedColorFilter": null,
+        "requestedColorFilter": "green",
         "selectedSupplierPartNumbers": [
-          "C965799",
           "C111111",
         ],
       }
