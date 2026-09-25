@@ -59,15 +59,15 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/leds/")) {
         const requestedColor = new URL(url).searchParams.get("color")
+        const ledCandidates = [
+          { lcsc: "965799", color: "red" },
+          { lcsc: "111111", color: "green" },
+        ]
         return {
           json: async () => ({
-            leds:
-              requestedColor === "green"
-                ? [{ lcsc: "111111", color: "green" }]
-                : [
-                    { lcsc: "965799", color: "red" },
-                    { lcsc: "111111", color: "green" },
-                  ],
+            leds: requestedColor
+              ? ledCandidates.filter((led) => led.color === requestedColor)
+              : ledCandidates,
           }),
         } as Response
       }
