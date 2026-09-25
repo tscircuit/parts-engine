@@ -125,9 +125,20 @@ describe("jlcPartsEngine", () => {
         } as Response
       }
       if (url.includes("/switches/")) {
+        const requestedSwitchType = new URL(url).searchParams.get("switch_type")
+        const switchCandidates = [
+          { lcsc: "2345", switch_type: "Tactile Switches" },
+          { lcsc: "6789", switch_type: "Tactile Switches" },
+          { lcsc: "0123", switch_type: "Tactile Switches" },
+        ]
         return {
           json: async () => ({
-            switches: [{ lcsc: "2345" }, { lcsc: "6789" }, { lcsc: "0123" }],
+            switches: requestedSwitchType
+              ? switchCandidates.filter(
+                  (switchCandidate) =>
+                    switchCandidate.switch_type === requestedSwitchType,
+                )
+              : switchCandidates,
           }),
         } as Response
       }
@@ -534,7 +545,7 @@ describe("jlcPartsEngine", () => {
     })
   })
 
-  test("should find switch parts", async () => {
+  test("finds switches without using the record type as a switch filter", async () => {
     const switch_: AnySourceComponent = {
       type: "source_component",
       ftype: "simple_switch",
@@ -550,6 +561,11 @@ describe("jlcPartsEngine", () => {
     expect(result).toEqual({
       jlcpcb: ["C2345", "C6789", "C0123"],
     })
+
+    const switchUrl = getFirstFetchedUrl(fetchedUrls)
+    expect(switchUrl.pathname).toBe("/switches/list")
+    expect(switchUrl.searchParams.has("switch_type")).toBe(false)
+    expect(switchUrl.searchParams.get("package")).toBe("SMD")
   })
 
   test("should find usb_c connector parts", async () => {
