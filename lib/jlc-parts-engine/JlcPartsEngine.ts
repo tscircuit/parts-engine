@@ -232,6 +232,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
     ) {
       const { leds } = await getJlcPartsCached("leds", {
         package: jlcpcbPackage,
+        color: sourceComponent.color,
       })
       return {
         jlcpcb: withBasicPartPreference(leds)

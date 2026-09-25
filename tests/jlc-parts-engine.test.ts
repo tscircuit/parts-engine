@@ -59,15 +59,15 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/leds/")) {
         const requestedColor = new URL(url).searchParams.get("color")
+        const ledCandidates = [
+          { lcsc: "965799", color: "red" },
+          { lcsc: "111111", color: "green" },
+        ]
         return {
           json: async () => ({
-            leds:
-              requestedColor === "green"
-                ? [{ lcsc: "111111", color: "green" }]
-                : [
-                    { lcsc: "965799", color: "red" },
-                    { lcsc: "111111", color: "green" },
-                  ],
+            leds: requestedColor
+              ? ledCandidates.filter((led) => led.color === requestedColor)
+              : ledCandidates,
           }),
         } as Response
       }
@@ -353,7 +353,7 @@ describe("jlcPartsEngine", () => {
     })
   })
 
-  test("repro: green LED search does not pass its color to jlcsearch", async () => {
+  test("passes the requested green LED color to jlcsearch", async () => {
     const greenLed: AnySourceComponent = {
       type: "source_component",
       ftype: "simple_led",
@@ -373,9 +373,8 @@ describe("jlcPartsEngine", () => {
       selectedSupplierPartNumbers: result.jlcpcb,
     }).toMatchInlineSnapshot(`
       {
-        "requestedColorFilter": null,
+        "requestedColorFilter": "green",
         "selectedSupplierPartNumbers": [
-          "C965799",
           "C111111",
         ],
       }
