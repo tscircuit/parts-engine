@@ -57,6 +57,20 @@ describe("jlcPartsEngine", () => {
           }),
         } as Response
       }
+      if (url.includes("/leds/")) {
+        const requestedColor = new URL(url).searchParams.get("color")
+        return {
+          json: async () => ({
+            leds:
+              requestedColor === "green"
+                ? [{ lcsc: "111111", color: "green" }]
+                : [
+                    { lcsc: "965799", color: "red" },
+                    { lcsc: "111111", color: "green" },
+                  ],
+          }),
+        } as Response
+      }
       if (url.includes("/chips/")) {
         return {
           json: async () => ({
@@ -337,6 +351,35 @@ describe("jlcPartsEngine", () => {
     expect(result).toEqual({
       jlcpcb: ["C4567", "C8901", "C2345"],
     })
+  })
+
+  test("repro: green LED search does not pass its color to jlcsearch", async () => {
+    const greenLed: AnySourceComponent = {
+      type: "source_component",
+      ftype: "simple_led",
+      color: "green",
+      source_component_id: "source_component_0",
+      name: "D1",
+    }
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: greenLed,
+      footprinterString: "0603",
+    })
+    const ledUrl = getFirstFetchedUrl(fetchedUrls)
+
+    expect({
+      requestedColorFilter: ledUrl.searchParams.get("color"),
+      selectedSupplierPartNumbers: result.jlcpcb,
+    }).toMatchInlineSnapshot(`
+      {
+        "requestedColorFilter": null,
+        "selectedSupplierPartNumbers": [
+          "C965799",
+          "C111111",
+        ],
+      }
+    `)
   })
 
   test("should find chip parts", async () => {
