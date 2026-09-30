@@ -1,3 +1,4 @@
+import { createDatasheetInformationLoader } from "../datasheets/create-datasheet-information-loader"
 import type { PartsEngine } from "@tscircuit/props"
 import {
   fetchEasyEDAComponent,
@@ -18,13 +19,22 @@ const normalizePartNumber = (partNumber: unknown) =>
   typeof partNumber === "string" ? partNumber.trim().toLowerCase() : undefined
 
 export class JlcPcbPartsEngine implements PartsEngine {
+  readonly fetchDatasheetInformation: ReturnType<
+    typeof createDatasheetInformationLoader
+  >
+
   private readonly defaultPlatformFetch: JlcPcbPartsEngineOptions["platformFetch"]
   private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxyConfig"]
 
   constructor({
     platformFetch: defaultPlatformFetch,
     easyEdaProxyConfig,
+    ...datasheetOptions
   }: JlcPcbPartsEngineOptions = {}) {
+    this.fetchDatasheetInformation = createDatasheetInformationLoader({
+      ...datasheetOptions,
+      platformFetch: defaultPlatformFetch,
+    })
     this.defaultPlatformFetch = defaultPlatformFetch
     this.easyEdaProxyConfig = easyEdaProxyConfig
     this.fetchPartCircuitJson = this.fetchPartCircuitJson.bind(this)

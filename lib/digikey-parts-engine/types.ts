@@ -1,6 +1,7 @@
+import type { DatasheetInformationOptions } from "../datasheets/types"
 import type { PlatformFetch } from "../jlc-parts-engine/types"
 
-export type DigiKeyPartsEngineOptions = {
+export type DigiKeyPartsEngineOptions = DatasheetInformationOptions & {
   platformFetch?: PlatformFetch
   apiBaseUrl?: string
 }

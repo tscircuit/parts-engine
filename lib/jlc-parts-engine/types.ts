@@ -1,3 +1,4 @@
+import type { DatasheetInformationOptions } from "../datasheets/types"
 export type PlatformFetch = (
   input: Parameters<typeof fetch>[0],
   init?: Parameters<typeof fetch>[1],
@@ -14,7 +15,7 @@ export type EasyEdaProxyConfig = {
   headers?: Record<string, string>
 }
 
-export type JlcPcbPartsEngineOptions = {
+export type JlcPcbPartsEngineOptions = DatasheetInformationOptions & {
   platformFetch?: PlatformFetch
   easyEdaProxyConfig?: EasyEdaProxyConfig
 }

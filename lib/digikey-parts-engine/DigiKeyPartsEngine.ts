@@ -1,3 +1,4 @@
+import { createDatasheetInformationLoader } from "../datasheets/create-datasheet-information-loader"
 import type { PartsEngine } from "@tscircuit/props"
 import { getJlcpcbPackageName } from "../footprint-translators"
 import { getPinHeaderSearchParams } from "../jlc-parts-engine/get-pin-header-search-params"
@@ -8,10 +9,15 @@ import {
 import type { DigiKeyPartsEngineOptions, DigiKeySearchPart } from "./types"
 
 export class DigiKeyPartsEngine implements PartsEngine {
+  readonly fetchDatasheetInformation: ReturnType<
+    typeof createDatasheetInformationLoader
+  >
+
   private readonly platformFetch: DigiKeyPartsEngineOptions["platformFetch"]
   private readonly apiBaseUrl: string | undefined
 
   constructor(options: DigiKeyPartsEngineOptions = {}) {
+    this.fetchDatasheetInformation = createDatasheetInformationLoader(options)
     this.platformFetch = options.platformFetch
     this.apiBaseUrl = options.apiBaseUrl
     this.findPart = this.findPart.bind(this)
