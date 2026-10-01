@@ -1,0 +1,112 @@
+{
+  "datasheet": {
+    "datasheet_id": "727700d2-5a8d-4693-a985-975d7262d61a",
+    "chip_name": "AP2112M-33TRG1",
+    "pin_attributes": {
+      "pin1": {
+        "isOutput": true,
+        "providesPower": true,
+        "providesVoltage": 3.3,
+        "shouldHaveDecouplingCapacitor": true,
+        "recommendedDecouplingCapacitorCapacitance": "1uF"
+      },
+      "pin2": {
+        "doNotConnect": true
+      },
+      "pin3": {
+        "doNotConnect": true
+      },
+      "pin4": {
+        "doNotConnect": true
+      },
+      "pin5": {
+        "isInput": true,
+        "mustBeConnected": true
+      },
+      "pin6": {
+        "requiresGround": true,
+        "mustBeConnected": true
+      },
+      "pin7": {
+        "requiresGround": true,
+        "mustBeConnected": true
+      },
+      "pin8": {
+        "requiresPower": true,
+        "mustBeConnected": true,
+        "shouldHaveDecouplingCapacitor": true,
+        "recommendedDecouplingCapacitorCapacitance": "1uF"
+      }
+    },
+    "footprinter_string": "soic8",
+    "datasheet_pdf_urls": [
+      "https://www.diodes.com/assets/Datasheets/AP2112.pdf"
+    ],
+    "pin_information": [
+      {
+        "pin_number": "1",
+        "name": [
+          "VOUT"
+        ],
+        "description": "Fixed 3.3V output",
+        "capabilities": []
+      },
+      {
+        "pin_number": "2",
+        "name": [
+          "NC"
+        ],
+        "description": "Unconnected terminal",
+        "capabilities": []
+      },
+      {
+        "pin_number": "3",
+        "name": [
+          "NC"
+        ],
+        "description": "Unconnected terminal",
+        "capabilities": []
+      },
+      {
+        "pin_number": "4",
+        "name": [
+          "NC"
+        ],
+        "description": "Unconnected terminal",
+        "capabilities": []
+      },
+      {
+        "pin_number": "5",
+        "name": [
+          "EN"
+        ],
+        "description": "Active-high enable input",
+        "capabilities": []
+      },
+      {
+        "pin_number": "6",
+        "name": [
+          "GND"
+        ],
+        "description": "Ground",
+        "capabilities": []
+      },
+      {
+        "pin_number": "7",
+        "name": [
+          "GND"
+        ],
+        "description": "Ground",
+        "capabilities": []
+      },
+      {
+        "pin_number": "8",
+        "name": [
+          "VIN"
+        ],
+        "description": "Regulator input; recommended 2.5-6V, subject to dropout",
+        "capabilities": []
+      }
+    ]
+  }
+}

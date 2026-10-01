@@ -6,7 +6,24 @@ import type { DatasheetInformation } from "./types"
 const toSourcePinAttributes = (
   attributes: PinAttributeMap,
 ): SourcePinAttributes => {
-  const converted: SourcePinAttributes = {
+  // These props fields are added by tscircuit/circuit-json#850.
+  // Keep them in the returned JSON even while older consumers upgrade.
+  const additionalAttributes = {
+    is_input: attributes.isInput,
+    is_output: attributes.isOutput,
+    is_bidirectional: attributes.isBidirectional,
+    is_passive: attributes.isPassive,
+    can_use_tri_state: attributes.canUseTriState,
+    is_using_tri_state: attributes.isUsingTriState,
+    can_use_open_collector: attributes.canUseOpenCollector,
+    is_using_open_collector: attributes.isUsingOpenCollector,
+    can_use_open_emitter: attributes.canUseOpenEmitter,
+    is_using_open_emitter: attributes.isUsingOpenEmitter,
+    is_gpio: attributes.isGpio,
+    highlight_color: attributes.highlightColor,
+  }
+  const converted: SourcePinAttributes & typeof additionalAttributes = {
+    ...additionalAttributes,
     must_be_connected: attributes.mustBeConnected,
     provides_power: attributes.providesPower,
     requires_power: attributes.requiresPower,
@@ -39,7 +56,7 @@ const toSourcePinAttributes = (
   ]) {
     converted[`is_configured_for_${capability}`] = true
   }
-  for (const key of Object.keys(converted) as (keyof SourcePinAttributes)[]) {
+  for (const key of Object.keys(converted) as (keyof typeof converted)[]) {
     if (converted[key] === undefined) delete converted[key]
   }
   return converted
@@ -78,11 +95,18 @@ export const enrichCircuitJsonWithDatasheet = (
           (pin) => `pin${pin.pin_number}` === pinKey,
         )
       : undefined
-    const attributeKeys = new Set([
-      ...(pinInformation?.name ?? []),
+    const importedLabelKeys = [
       ...(element.port_hints ?? []),
       element.name,
-    ])
+    ].filter((key) => key !== pinKey && datasheet.pinAttributes?.[key])
+    // Some supplier symbols renumber pads (e.g. SK9822-A). When attributes
+    // use signal labels, prefer the imported signal to a physical-number
+    // fallback, otherwise unrelated pin roles would be merged together.
+    const attributeKeys = new Set(
+      importedLabelKeys.length > 0
+        ? importedLabelKeys
+        : (pinInformation?.name ?? []),
+    )
     // Ensure the physical key is last even if it was already a name or hint.
     if (pinKey) {
       attributeKeys.delete(pinKey)

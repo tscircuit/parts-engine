@@ -1,0 +1,108 @@
+{
+  "datasheet": {
+    "datasheet_id": "2758f84c-e309-4d6f-a573-c44d4481d43b",
+    "chip_name": "74AHCT2G125DC125",
+    "pin_attributes": {
+      "pin1": {
+        "isInput": true
+      },
+      "pin2": {
+        "isInput": true
+      },
+      "pin3": {
+        "isOutput": true,
+        "canUseTriState": true
+      },
+      "pin4": {
+        "requiresGround": true,
+        "mustBeConnected": true
+      },
+      "pin5": {
+        "isInput": true
+      },
+      "pin6": {
+        "isOutput": true,
+        "canUseTriState": true
+      },
+      "pin7": {
+        "isInput": true
+      },
+      "pin8": {
+        "requiresPower": true,
+        "requiresVoltage": 5,
+        "mustBeConnected": true,
+        "shouldHaveDecouplingCapacitor": true
+      }
+    },
+    "footprinter_string": null,
+    "datasheet_pdf_urls": [
+      "https://assets.nexperia.com/documents/data-sheet/74AHC_AHCT2G125.pdf"
+    ],
+    "pin_information": [
+      {
+        "pin_number": "1",
+        "name": [
+          "~1OE"
+        ],
+        "description": "~1OE",
+        "capabilities": []
+      },
+      {
+        "pin_number": "2",
+        "name": [
+          "1A"
+        ],
+        "description": "1A",
+        "capabilities": []
+      },
+      {
+        "pin_number": "3",
+        "name": [
+          "2Y"
+        ],
+        "description": "2Y",
+        "capabilities": []
+      },
+      {
+        "pin_number": "4",
+        "name": [
+          "GND"
+        ],
+        "description": "GND",
+        "capabilities": []
+      },
+      {
+        "pin_number": "5",
+        "name": [
+          "2A"
+        ],
+        "description": "2A",
+        "capabilities": []
+      },
+      {
+        "pin_number": "6",
+        "name": [
+          "1Y"
+        ],
+        "description": "1Y",
+        "capabilities": []
+      },
+      {
+        "pin_number": "7",
+        "name": [
+          "~2OE"
+        ],
+        "description": "~2OE",
+        "capabilities": []
+      },
+      {
+        "pin_number": "8",
+        "name": [
+          "VCC"
+        ],
+        "description": "VCC",
+        "capabilities": []
+      }
+    ]
+  }
+}

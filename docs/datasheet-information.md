@@ -28,8 +28,10 @@ attributes for the wrong part.
 Stored attributes are mapped onto existing `source_port` records by physical
 pin number (`pin1`, `pin2`, etc.) or label, following the unmodified
 `@tscircuit/props` pinAttributes schema. Label keys resolve against the port's
-name/hints and the matching datasheet pin_information names; shared labels apply
-to each matching pin. Physical pin entries override label entries field by field.
+name/hints; datasheet pin_information names are a fallback when no imported
+label matches. This avoids mixing unrelated roles for imports with different
+pin numbering (the published F1C board uses this for SK9822-A). Shared labels
+apply to each matching pin. Physical pin entries override label entries field by field.
 Canonical names (`pinA1`) also work when there is no numeric pin_number. Only ports belonging to the imported source component
 are enriched. Geometry, IDs, names, and pin counts are preserved. Supplied
 attributes replace corresponding importer values; omitted attributes preserve
@@ -40,12 +42,12 @@ API `pin_attributes` and returned `pinAttributes` use the props schema's camelCa
 attribute names and upstream unknown-field stripping. Snake_case conversion
 happens only when emitting canonical Circuit JSON source_port fields.
 
-Mapping follows core's `applyPinAttributesToSourcePort` and the existing
-Circuit JSON `SourcePinAttributes` schema. Capabilities become `supports_*`
-and active capabilities become `is_configured_for_*`. TSX-only attributes
-without a corresponding Circuit JSON field (such as highlightColor and isGpio)
-are not invented as new JSON properties. They remain accessible through the
-raw metadata method below.
+All props pin attributes are mapped to Circuit JSON. Capabilities become
+`supports_*` and active capabilities become `is_configured_for_*`; other
+attributes use snake_case. Direction, GPIO, tri-state, open-collector/emitter,
+and highlight color require the companion schema addition:
+https://github.com/tscircuit/circuit-json/pull/850. Older Circuit JSON parsers
+will strip those new fields until they upgrade.
 
 The loader performs `GET https://api.tscircuit.com/datasheets/get?chip_name=...`.
 Set `datasheetApiBaseUrl` for another registry. Constructor and per-call
@@ -87,3 +89,35 @@ Mouser do not currently implement `fetchPartCircuitJson`.
 
 This updates the transport choice in the API PR's rollout plan: electrical
 metadata travels in Circuit JSON rather than requiring a separate core lookup.
+
+## Practical F1C100S verification
+
+Production API records now cover all 140 pins across the board's nine ICs:
+F1C100S (89), AP2112M-3.3TRG1 (8), AP2112K-1.2TRG1 (5),
+AP2112K-2.5TRG1 (5), AP2127K-2.8TRG1 (5), W25Q128JVSIQ (8),
+74AHCT2G125DC,125 (8), USBLC6-2SC6 (6), and SK9822-A (6).
+AP2112K-1.8TRG1 is also stored to keep the faulty voltage variant explicit.
+Each record has manufacturer datasheet links and generated TSX; verified
+footprinter strings are present where available. Passives, connectors, and
+switches are outside this IC metadata audit.
+
+Run `bun scripts/verify-f1c100s-datasheets.ts` for a read-only check against
+production API data and live supplier imports. Offline regressions use captured
+supplier data and uploaded API responses in `tests/fixtures/f1c100s`.
+
+The checks verify data transport and completeness, not a core DRC warning.
+AVCC pin80 requires nominal 2.8V; DDR pins30/31/32/34/36 require nominal 2.5V.
+The old regulator provides 1.8V. Voltage ranges are documented in the records'
+descriptions because props currently has only scalar voltage fields. In
+particular, core nominal 1.1V does not mean the existing 1.2V rail is automatically
+invalid; Allwinner specifies 1.0-1.2V. HPVCC and SVREF have no separately specified
+nominal voltage, so only their documented role is encoded.
+
+The F1C capabilities correct two pairs in the published board metadata:
+PE0/PE1 I2C clock/data, and TPY1/TPY2 UART/SPI roles. No firmware-selected
+function or pull state is assumed. SK9822-A uses label-keyed attributes to
+support both manufacturer numbering and the published board's numbering.
+
+Live cache checks verify the 60-second Cache-Control policy and ETag/304.
+Cloudflare currently reports DYNAMIC, so these checks do not demonstrate an
+edge-cache hit. The parts-engine's own bounded cache is covered separately.

@@ -1,0 +1,82 @@
+{
+  "datasheet": {
+    "datasheet_id": "90f99c39-932f-4ff9-9d35-2c7dda9a3994",
+    "chip_name": "USBLC6-2SC6",
+    "pin_attributes": {
+      "pin1": {
+        "isPassive": true
+      },
+      "pin2": {
+        "requiresGround": true,
+        "mustBeConnected": true
+      },
+      "pin3": {
+        "isPassive": true
+      },
+      "pin4": {
+        "isPassive": true
+      },
+      "pin5": {
+        "isPassive": true,
+        "mustBeConnected": true
+      },
+      "pin6": {
+        "isPassive": true
+      }
+    },
+    "footprinter_string": "sot23_6",
+    "datasheet_pdf_urls": [
+      "https://www.st.com/resource/en/datasheet/usblc6-2.pdf"
+    ],
+    "pin_information": [
+      {
+        "pin_number": "1",
+        "name": [
+          "IO1"
+        ],
+        "description": "IO1",
+        "capabilities": []
+      },
+      {
+        "pin_number": "2",
+        "name": [
+          "GND"
+        ],
+        "description": "GND",
+        "capabilities": []
+      },
+      {
+        "pin_number": "3",
+        "name": [
+          "IO2"
+        ],
+        "description": "IO2",
+        "capabilities": []
+      },
+      {
+        "pin_number": "4",
+        "name": [
+          "IO2"
+        ],
+        "description": "IO2",
+        "capabilities": []
+      },
+      {
+        "pin_number": "5",
+        "name": [
+          "VBUS"
+        ],
+        "description": "VBUS",
+        "capabilities": []
+      },
+      {
+        "pin_number": "6",
+        "name": [
+          "IO1"
+        ],
+        "description": "IO1",
+        "capabilities": []
+      }
+    ]
+  }
+}

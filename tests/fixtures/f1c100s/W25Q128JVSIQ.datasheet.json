@@ -1,0 +1,127 @@
+{
+  "datasheet": {
+    "datasheet_id": "c3a882ac-bac8-440b-a685-72d696e0d2a9",
+    "chip_name": "W25Q128JVSIQ",
+    "pin_attributes": {
+      "pin1": {
+        "isInput": true,
+        "capabilities": [
+          "spi_cs"
+        ]
+      },
+      "pin2": {
+        "isBidirectional": true,
+        "canUseTriState": true,
+        "capabilities": [
+          "spi_miso"
+        ]
+      },
+      "pin3": {
+        "isBidirectional": true
+      },
+      "pin4": {
+        "requiresGround": true,
+        "mustBeConnected": true
+      },
+      "pin5": {
+        "isBidirectional": true,
+        "capabilities": [
+          "spi_mosi"
+        ]
+      },
+      "pin6": {
+        "isInput": true,
+        "capabilities": [
+          "spi_sck"
+        ]
+      },
+      "pin7": {
+        "isBidirectional": true
+      },
+      "pin8": {
+        "requiresPower": true,
+        "requiresVoltage": 3.3,
+        "mustBeConnected": true,
+        "shouldHaveDecouplingCapacitor": true
+      }
+    },
+    "footprinter_string": null,
+    "datasheet_pdf_urls": [
+      "https://datasheet.lcsc.com/datasheet/pdf/d009d960f1daec6149edaa35b7dae856.pdf?productCode=C97521"
+    ],
+    "pin_information": [
+      {
+        "pin_number": "1",
+        "name": [
+          "~CS"
+        ],
+        "description": "~CS",
+        "capabilities": [
+          "spi_cs"
+        ]
+      },
+      {
+        "pin_number": "2",
+        "name": [
+          "DO/IO1"
+        ],
+        "description": "DO/IO1",
+        "capabilities": [
+          "spi_miso"
+        ]
+      },
+      {
+        "pin_number": "3",
+        "name": [
+          "~WP/IO2"
+        ],
+        "description": "~WP/IO2",
+        "capabilities": []
+      },
+      {
+        "pin_number": "4",
+        "name": [
+          "GND"
+        ],
+        "description": "GND",
+        "capabilities": []
+      },
+      {
+        "pin_number": "5",
+        "name": [
+          "DI/IO0"
+        ],
+        "description": "DI/IO0",
+        "capabilities": [
+          "spi_mosi"
+        ]
+      },
+      {
+        "pin_number": "6",
+        "name": [
+          "CLK"
+        ],
+        "description": "CLK",
+        "capabilities": [
+          "spi_sck"
+        ]
+      },
+      {
+        "pin_number": "7",
+        "name": [
+          "~HOLD/IO3"
+        ],
+        "description": "~HOLD/IO3",
+        "capabilities": []
+      },
+      {
+        "pin_number": "8",
+        "name": [
+          "VCC"
+        ],
+        "description": "VCC",
+        "capabilities": []
+      }
+    ]
+  }
+}
