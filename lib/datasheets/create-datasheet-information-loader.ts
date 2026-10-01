@@ -1,4 +1,4 @@
-import { pinAttributeMap } from "@tscircuit/props"
+import { commonComponentProps } from "@tscircuit/props"
 import { z } from "zod"
 import type { PlatformFetch } from "../jlc-parts-engine/types"
 import type {
@@ -22,13 +22,7 @@ const responseSchema = z.object({
         }),
       )
       .nullish(),
-    // Retain unknown future attributes, but validate every currently known field.
-    pin_attributes: z
-      .record(
-        z.string().regex(/^pin[0-9A-Za-z]+$/),
-        pinAttributeMap.passthrough(),
-      )
-      .nullish(),
+    pin_attributes: commonComponentProps.shape.pinAttributes.nullable(),
     footprinter_string: z.string().nullish(),
     generated_tsx: z.string().nullish(),
   }),

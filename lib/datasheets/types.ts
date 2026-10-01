@@ -1,4 +1,4 @@
-import type { PinAttributeMap } from "@tscircuit/props"
+import type { CommonComponentProps } from "@tscircuit/props"
 import type { PlatformFetch } from "../jlc-parts-engine/types"
 
 export type DatasheetInformation = {
@@ -13,8 +13,8 @@ export type DatasheetInformation = {
         capabilities: string[]
       }[]
     | null
-  /** Physical pin keys (pin1, pinA1, ...), ready for TSX pinAttributes. */
-  pinAttributes?: Record<string, PinAttributeMap> | null
+  /** Uses the TSX schema directly, including pin-number and label keys. */
+  pinAttributes?: CommonComponentProps["pinAttributes"] | null
   footprinterString?: string | null
   /** Source text only. The parts engine never evaluates it. */
   generatedTsx?: string | null

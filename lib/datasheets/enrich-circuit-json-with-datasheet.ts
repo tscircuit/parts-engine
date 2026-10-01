@@ -65,15 +65,34 @@ export const enrichCircuitJsonWithDatasheet = (
       element.source_component_id !== sourceComponent.source_component_id
     )
       return element
-    // Prefer the physical number. A shared label (e.g. VDD) is never a pin key.
+    // Label keys follow TSX pinAttributes semantics, including shared labels.
+    // An explicit physical-pin entry overrides label entries field by field.
     const pinKey =
       element.pin_number !== undefined
         ? `pin${element.pin_number}`
         : /^pin[0-9A-Za-z]+$/.test(element.name)
           ? element.name
           : undefined
-    const attributes = pinKey ? datasheet.pinAttributes?.[pinKey] : undefined
-    if (!attributes) return element
+    const pinInformation = pinKey
+      ? datasheet.pinInformation?.find(
+          (pin) => `pin${pin.pin_number}` === pinKey,
+        )
+      : undefined
+    const attributeKeys = new Set([
+      ...(pinInformation?.name ?? []),
+      ...(element.port_hints ?? []),
+      element.name,
+    ])
+    // Ensure the physical key is last even if it was already a name or hint.
+    if (pinKey) {
+      attributeKeys.delete(pinKey)
+      attributeKeys.add(pinKey)
+    }
+    const attributes: PinAttributeMap = {}
+    for (const key of attributeKeys) {
+      Object.assign(attributes, datasheet.pinAttributes?.[key])
+    }
+    if (Object.keys(attributes).length === 0) return element
     return { ...element, ...toSourcePinAttributes(attributes) }
   })
 }

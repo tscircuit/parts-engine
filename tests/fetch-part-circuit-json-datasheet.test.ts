@@ -282,3 +282,97 @@ test("exact manufacturer searches return enriched Circuit JSON", async () => {
     ),
   ).toMatchObject({ provides_voltage: "3.3V" })
 })
+
+test("props label keys enrich shared pins and physical keys override label attributes", () => {
+  const input: AnyCircuitElement[] = [
+    {
+      type: "source_component",
+      ftype: "simple_chip",
+      source_component_id: "u1",
+      name: "U1",
+    },
+    {
+      type: "source_port",
+      source_port_id: "p1",
+      source_component_id: "u1",
+      pin_number: 1,
+      name: "pin1",
+      port_hints: ["VDD"],
+    },
+    {
+      type: "source_port",
+      source_port_id: "p2",
+      source_component_id: "u1",
+      pin_number: 2,
+      name: "pin2",
+      port_hints: ["VDD"],
+    },
+    {
+      type: "source_port",
+      source_port_id: "p3",
+      source_component_id: "u1",
+      pin_number: 3,
+      name: "pin3",
+    },
+  ]
+  const information: DatasheetInformation = {
+    datasheetId: datasheet.datasheet_id,
+    chipName: "EXAMPLE",
+    pinAttributes: {
+      VDD: { requiresPower: true, requiresVoltage: "3.3V" },
+      pin2: { requiresVoltage: "1.8V" },
+      "~RESET": { mustBeConnected: false, needsExternalPullup: true },
+    },
+    pinInformation: [
+      {
+        pin_number: "3",
+        name: ["~RESET"],
+        description: "Reset",
+        capabilities: [],
+      },
+    ],
+  }
+  const result = enrichCircuitJsonWithDatasheet(input, information)
+  expect(result[1]).toMatchObject({
+    requires_power: true,
+    requires_voltage: "3.3V",
+  })
+  expect(result[2]).toMatchObject({
+    requires_power: true,
+    requires_voltage: "1.8V",
+  })
+  expect(result[3]).toMatchObject({
+    must_be_connected: false,
+    needs_external_pullup: true,
+  })
+})
+
+test("fetchPartCircuitJson accepts props label-keyed attributes from the API", async () => {
+  const platformFetch = fixtureFetch(() =>
+    Response.json({
+      datasheet: {
+        ...datasheet,
+        pin_attributes: {
+          OUT: { providesPower: true, providesVoltage: "3.3V" },
+          GND: { requiresGround: true },
+          IN: { requiresPower: true, requiresVoltage: "5V" },
+        },
+      },
+    }),
+  )
+  const engine = new JlcPcbPartsEngine({ platformFetch })
+  const result = await engine.fetchPartCircuitJson({
+    supplierPartNumber: "C11337",
+    includeDatasheetInformation: true,
+  })
+  expect(
+    result!.find(
+      (element) => element.type === "source_port" && element.pin_number === 5,
+    ),
+  ).toMatchObject({ provides_power: true, provides_voltage: "3.3V" })
+  expect(
+    result!.find(
+      (element) => element.type === "source_port" && element.pin_number === 2,
+    ),
+  ).toMatchObject({ requires_ground: true })
+})

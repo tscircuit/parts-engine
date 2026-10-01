@@ -26,13 +26,19 @@ number disagrees with the imported record, the call rejects before loading
 attributes for the wrong part.
 
 Stored attributes are mapped onto existing `source_port` records by physical
-pin number (`pin1`, `pin2`, etc.), with canonical names (`pinA1`) supported when
-there is no numeric pin_number. Shared labels like VDD and port aliases are not
-used as physical identity. Only ports belonging to the imported source component
+pin number (`pin1`, `pin2`, etc.) or label, following the unmodified
+`@tscircuit/props` pinAttributes schema. Label keys resolve against the port's
+name/hints and the matching datasheet pin_information names; shared labels apply
+to each matching pin. Physical pin entries override label entries field by field.
+Canonical names (`pinA1`) also work when there is no numeric pin_number. Only ports belonging to the imported source component
 are enriched. Geometry, IDs, names, and pin counts are preserved. Supplied
 attributes replace corresponding importer values; omitted attributes preserve
 existing values. Explicit false and zero values are retained. The source
 component also carries the datasheet's manufacturer part number.
+
+API `pin_attributes` and returned `pinAttributes` use the props schema's camelCase
+attribute names and upstream unknown-field stripping. Snake_case conversion
+happens only when emitting canonical Circuit JSON source_port fields.
 
 Mapping follows core's `applyPinAttributesToSourcePort` and the existing
 Circuit JSON `SourcePinAttributes` schema. Capabilities become `supports_*`

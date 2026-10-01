@@ -1,4 +1,5 @@
 import { afterEach, expect, mock, spyOn, test } from "bun:test"
+import { commonComponentProps } from "@tscircuit/props"
 import {
   DigiKeyPartsEngine,
   JlcPcbPartsEngine,
@@ -228,7 +229,7 @@ test("custom endpoint and fetch overrides have isolated caches", async () => {
   )
 })
 
-test("old records without attributes remain valid and unknown future attributes survive", async () => {
+test("old records remain valid and pin attributes use the unmodified props schema", async () => {
   const platformFetch = mock(async (_input: unknown) =>
     Response.json({
       datasheet: {
@@ -248,14 +249,16 @@ test("old records without attributes remain valid and unknown future attributes 
       })
     )?.pinAttributes,
   ).toBeUndefined()
-  const futureAttributes = { providesVoltage: 2.8, futureAttribute: true }
+  const suppliedAttributes = {
+    VOUT: { providesVoltage: 2.8, futureAttribute: true },
+    "~RESET": { isInput: true, mustBeConnected: false },
+    GPIO0: { isGpio: true, capabilities: ["i2c_sda"], isBidirectional: true },
+  }
   const futureFetch = mock(async (_input: unknown) =>
     Response.json({
       datasheet: {
         ...datasheet,
-        pin_attributes: {
-          pin3: { providesVoltage: 2.8, futureAttribute: true },
-        },
+        pin_attributes: suppliedAttributes,
       },
     }),
   )
@@ -265,6 +268,8 @@ test("old records without attributes remain valid and unknown future attributes 
         manufacturerPartNumber: "REG-2V8",
         platformFetch: futureFetch,
       })
-    )?.pinAttributes?.pin3,
-  ).toEqual(futureAttributes)
+    )?.pinAttributes,
+  ).toEqual(
+    commonComponentProps.shape.pinAttributes.unwrap().parse(suppliedAttributes),
+  )
 })
