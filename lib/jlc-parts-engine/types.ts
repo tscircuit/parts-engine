@@ -8,6 +8,8 @@ export type FetchPartCircuitJsonParams = {
   supplierPartNumber?: string
   manufacturerPartNumber?: string
   platformFetch?: PlatformFetch
+  /** Include stored electrical attributes on source_port records. Overrides the engine option. */
+  includeDatasheetInformation?: boolean
 }
 
 export type EasyEdaProxyConfig = {

@@ -1,4 +1,5 @@
 import { createDatasheetInformationLoader } from "../datasheets/create-datasheet-information-loader"
+import { enrichCircuitJsonWithDatasheet } from "../datasheets/enrich-circuit-json-with-datasheet"
 import type { PartsEngine } from "@tscircuit/props"
 import {
   fetchEasyEDAComponent,
@@ -13,7 +14,11 @@ import {
 } from "./get-jst-connector-search-config"
 import { getPinHeaderSearchParams } from "./get-pin-header-search-params"
 import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
-import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
+import type {
+  FetchPartCircuitJsonParams,
+  JlcPcbPartsEngineOptions,
+  PlatformFetch,
+} from "./types"
 
 const normalizePartNumber = (partNumber: unknown) =>
   typeof partNumber === "string" ? partNumber.trim().toLowerCase() : undefined
@@ -25,12 +30,15 @@ export class JlcPcbPartsEngine implements PartsEngine {
 
   private readonly defaultPlatformFetch: JlcPcbPartsEngineOptions["platformFetch"]
   private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxyConfig"]
+  private readonly includeDatasheetInformation: boolean
 
   constructor({
     platformFetch: defaultPlatformFetch,
     easyEdaProxyConfig,
     ...datasheetOptions
   }: JlcPcbPartsEngineOptions = {}) {
+    this.includeDatasheetInformation =
+      datasheetOptions.includeDatasheetInformation ?? false
     this.fetchDatasheetInformation = createDatasheetInformationLoader({
       ...datasheetOptions,
       platformFetch: defaultPlatformFetch,
@@ -310,7 +318,8 @@ export class JlcPcbPartsEngine implements PartsEngine {
     supplierPartNumber,
     manufacturerPartNumber,
     platformFetch: platformFetchOverride,
-  }: Parameters<NonNullable<PartsEngine["fetchPartCircuitJson"]>>[0]) {
+    includeDatasheetInformation = this.includeDatasheetInformation,
+  }: FetchPartCircuitJsonParams) {
     const easyEdaPlatformFetch = this.getEasyEdaPlatformFetch(
       platformFetchOverride,
     )
@@ -328,7 +337,11 @@ export class JlcPcbPartsEngine implements PartsEngine {
           normalizePartNumber(component.mfr) ===
           normalizedManufacturerPartNumber,
       )
-      const componentMatch = exactManufacturerPartMatch ?? components?.[0]
+      // A fuzzy match may be a different voltage variant. Never enrich it with
+      // the requested part's electrical attributes.
+      const componentMatch =
+        exactManufacturerPartMatch ??
+        (includeDatasheetInformation ? undefined : components?.[0])
       resolvedSupplierPartNumber = componentMatch
         ? `C${componentMatch.lcsc}`
         : undefined
@@ -343,6 +356,31 @@ export class JlcPcbPartsEngine implements PartsEngine {
       },
     )
     const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
-    return convertEasyEdaJsonToCircuitJson(parsed)
+    const circuitJson = convertEasyEdaJsonToCircuitJson(parsed)
+    if (!includeDatasheetInformation) return circuitJson
+
+    const importedManufacturerPartNumber =
+      parsed.dataStr.head.c_para["Manufacturer Part"]?.trim()
+    if (
+      manufacturerPartNumber &&
+      importedManufacturerPartNumber &&
+      normalizePartNumber(manufacturerPartNumber) !==
+        normalizePartNumber(importedManufacturerPartNumber)
+    ) {
+      throw new Error(
+        `Cannot load datasheet attributes for ${manufacturerPartNumber}: imported part is ${importedManufacturerPartNumber}`,
+      )
+    }
+    const datasheetPartNumber =
+      importedManufacturerPartNumber || manufacturerPartNumber
+    if (!datasheetPartNumber) return circuitJson
+
+    const datasheet = await this.fetchDatasheetInformation({
+      manufacturerPartNumber: datasheetPartNumber,
+      platformFetch: platformFetchOverride,
+      includeDatasheetInformation: true,
+    })
+    if (!datasheet) return circuitJson
+    return enrichCircuitJsonWithDatasheet(circuitJson, datasheet)
   }
 }

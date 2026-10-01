@@ -1,51 +1,83 @@
-# Stored datasheet information
+# Datasheet attributes in Circuit JSON
 
-Opt in to public, stored datasheet information on any supplied engine:
+Request electrical attributes through the existing Circuit JSON method:
 
 ```ts
 import { JlcPcbPartsEngine } from "@tscircuit/parts-engine"
 
-const engine = new JlcPcbPartsEngine({ includeDatasheetInformation: true })
-const information = await engine.fetchDatasheetInformation({
-  manufacturerPartNumber: "EXAMPLE-2V8",
+const engine = new JlcPcbPartsEngine()
+const circuitJson = await engine.fetchPartCircuitJson({
+  supplierPartNumber: "C11337",
+  includeDatasheetInformation: true,
 })
-// information?.pinAttributes can be used as TSX pinAttributes.
+// source_port records include provides_voltage, requires_voltage,
+// requires_power, provides_power, do_not_connect, supports_i2c_sda, etc.
 ```
 
-`DigiKeyPartsEngine` and `MouserPartsEngine` expose the same method and option.
-A lookup can override the constructor setting with
-`includeDatasheetInformation: true` or `false`. The default is false and makes
-no requests. `findPart` still returns supplier part numbers, and
-`fetchPartCircuitJson` still returns Circuit JSON; neither gains hidden
-network work or changes its return shape.
+The option can also be set on the constructor. A per-call true/false overrides
+that default. With enrichment disabled (the default), no datasheet request is
+made and existing Circuit JSON behavior is unchanged.
+
+The engine reads the exact manufacturer part number from the imported EasyEDA
+record, or uses the supplied manufacturer number when the record lacks one.
+When enrichment is enabled, manufacturer searches require an exact catalog
+match; a fuzzy voltage variant is not accepted. If the requested manufacturer
+number disagrees with the imported record, the call rejects before loading
+attributes for the wrong part.
+
+Stored attributes are mapped onto existing `source_port` records by physical
+pin number (`pin1`, `pin2`, etc.), with canonical names (`pinA1`) supported when
+there is no numeric pin_number. Shared labels like VDD and port aliases are not
+used as physical identity. Only ports belonging to the imported source component
+are enriched. Geometry, IDs, names, and pin counts are preserved. Supplied
+attributes replace corresponding importer values; omitted attributes preserve
+existing values. Explicit false and zero values are retained. The source
+component also carries the datasheet's manufacturer part number.
+
+Mapping follows core's `applyPinAttributesToSourcePort` and the existing
+Circuit JSON `SourcePinAttributes` schema. Capabilities become `supports_*`
+and active capabilities become `is_configured_for_*`. TSX-only attributes
+without a corresponding Circuit JSON field (such as highlightColor and isGpio)
+are not invented as new JSON properties. They remain accessible through the
+raw metadata method below.
 
 The loader performs `GET https://api.tscircuit.com/datasheets/get?chip_name=...`.
-Set `datasheetApiBaseUrl` for another registry. Both the constructor's
-`platformFetch` and a per-call override are supported; the datasheet request is
-not routed through the EasyEDA proxy. This endpoint only reads stored data and
-does not trigger extraction, inference or component generation.
+Set `datasheetApiBaseUrl` for another registry. Constructor and per-call
+`platformFetch` overrides apply; datasheet requests bypass the EasyEDA proxy.
+Reads do not trigger AI extraction or evaluate generated TSX.
 
-Returned fields are `datasheetId`, `chipName`, `datasheetPdfUrls`,
-`pinInformation`, `pinAttributes`, `footprinterString`, and `generatedTsx`.
-Physical pin keys (`pin1`, `pinA1`, etc.) identify `pinAttributes` entries. Values
-use the existing `@tscircuit/props` schema, including unit strings or numbers in
-volts for `requiresVoltage` / `providesVoltage`. Missing optional fields and
-nulls are preserved. TSX is returned as source text and never evaluated.
+A missing datasheet (404) leaves the original Circuit JSON intact. Transport,
+non-404 HTTP, invalid schema, and wrong-chip responses reject so callers can
+distinguish unavailable information from a missing record. Requests carry a
+10-second abort signal. Concurrent identical lookups share a promise. Successes
+are cached for at most 60 seconds, honoring shorter max-age, Age, no-cache and
+no-store. Failures/404s are not retained. Caches hold at most 256 entries per
+engine and fetch implementation; caller edits do not mutate cached metadata.
 
-A 404 or disabled lookup returns undefined. Network, non-404 HTTP, invalid
-schema, and wrong-chip responses reject so callers can distinguish unavailable
-information from a missing datasheet. Requests carry a 10-second abort signal.
-Only a normalized exact manufacturer number is queried; there is no fuzzy or
-supplier-number fallback that could select a different voltage variant.
+## Additional metadata
 
-Concurrent identical lookups share a promise. Successful responses are cached
-for at most 60 seconds, honoring shorter HTTP max-age, Age, no-cache and no-store.
-404s and failures are not retained. Caches hold at most 256 entries per engine
-and fetch implementation, and returned data is cloned to isolate caller edits.
+`fetchDatasheetInformation({ manufacturerPartNumber })` remains available on
+JLCPCB, DigiKey, and Mouser engines with the same opt-in option. It returns
+`datasheetId`, `chipName`, `datasheetPdfUrls`, `pinInformation`, `pinAttributes`,
+`footprinterString`, and `generatedTsx`. This supports consumers needing TSX or
+other metadata that has no existing Circuit JSON representation. DigiKey and
+Mouser do not currently implement `fetchPartCircuitJson`.
 
-Core integration should add this optional method to `PartsEngine` in
-`@tscircuit/props`, load before source electrical checks, merge supplied pin
-attributes with explicit user values taking precedence, and report unresolved
-pins/required electrical fields in one warning per chip. Until that integration
-lands, applications explicitly call this method; enabling the constructor option
-alone does not cause core to invoke it.
+## Revised core rollout
+
+1. Add `includeDatasheetInformation?: boolean` to the existing
+   `PartsEngine.fetchPartCircuitJson` parameter contract in `@tscircuit/props`.
+   No new loader method is required for core's electrical-check path.
+2. Have core request enriched Circuit JSON before source electrical checks and
+   transfer the matching source_port attributes into its resolved component
+   attributes. Reuse existing fetched part data where possible; preserve explicit
+   user overrides without mutating props.
+3. Emit one aggregated missing-attributes warning per chip after the lookup
+   settles, with affected pins and applicable missing fields. Distinguish failed
+   lookups from missing data and respect parts-engine/DRC disable controls.
+4. Add the 1.8 V supply / 2.8 V requirement regression using the enriched
+   source_port records, plus the passing 2.8 V case. Core integration and the
+   electrical mismatch check remain follow-up work.
+
+This updates the transport choice in the API PR's rollout plan: electrical
+metadata travels in Circuit JSON rather than requiring a separate core lookup.
