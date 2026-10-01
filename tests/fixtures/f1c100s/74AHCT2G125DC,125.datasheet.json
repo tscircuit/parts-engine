@@ -41,65 +41,49 @@
     "pin_information": [
       {
         "pin_number": "1",
-        "name": [
-          "~1OE"
-        ],
+        "name": ["~1OE"],
         "description": "~1OE",
         "capabilities": []
       },
       {
         "pin_number": "2",
-        "name": [
-          "1A"
-        ],
+        "name": ["1A"],
         "description": "1A",
         "capabilities": []
       },
       {
         "pin_number": "3",
-        "name": [
-          "2Y"
-        ],
+        "name": ["2Y"],
         "description": "2Y",
         "capabilities": []
       },
       {
         "pin_number": "4",
-        "name": [
-          "GND"
-        ],
+        "name": ["GND"],
         "description": "GND",
         "capabilities": []
       },
       {
         "pin_number": "5",
-        "name": [
-          "2A"
-        ],
+        "name": ["2A"],
         "description": "2A",
         "capabilities": []
       },
       {
         "pin_number": "6",
-        "name": [
-          "1Y"
-        ],
+        "name": ["1Y"],
         "description": "1Y",
         "capabilities": []
       },
       {
         "pin_number": "7",
-        "name": [
-          "~2OE"
-        ],
+        "name": ["~2OE"],
         "description": "~2OE",
         "capabilities": []
       },
       {
         "pin_number": "8",
-        "name": [
-          "VCC"
-        ],
+        "name": ["VCC"],
         "description": "VCC",
         "capabilities": []
       }

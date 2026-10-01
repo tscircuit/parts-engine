@@ -5,16 +5,12 @@
     "pin_attributes": {
       "pin1": {
         "isInput": true,
-        "capabilities": [
-          "spi_cs"
-        ]
+        "capabilities": ["spi_cs"]
       },
       "pin2": {
         "isBidirectional": true,
         "canUseTriState": true,
-        "capabilities": [
-          "spi_miso"
-        ]
+        "capabilities": ["spi_miso"]
       },
       "pin3": {
         "isBidirectional": true
@@ -25,15 +21,11 @@
       },
       "pin5": {
         "isBidirectional": true,
-        "capabilities": [
-          "spi_mosi"
-        ]
+        "capabilities": ["spi_mosi"]
       },
       "pin6": {
         "isInput": true,
-        "capabilities": [
-          "spi_sck"
-        ]
+        "capabilities": ["spi_sck"]
       },
       "pin7": {
         "isBidirectional": true
@@ -52,73 +44,49 @@
     "pin_information": [
       {
         "pin_number": "1",
-        "name": [
-          "~CS"
-        ],
+        "name": ["~CS"],
         "description": "~CS",
-        "capabilities": [
-          "spi_cs"
-        ]
+        "capabilities": ["spi_cs"]
       },
       {
         "pin_number": "2",
-        "name": [
-          "DO/IO1"
-        ],
+        "name": ["DO/IO1"],
         "description": "DO/IO1",
-        "capabilities": [
-          "spi_miso"
-        ]
+        "capabilities": ["spi_miso"]
       },
       {
         "pin_number": "3",
-        "name": [
-          "~WP/IO2"
-        ],
+        "name": ["~WP/IO2"],
         "description": "~WP/IO2",
         "capabilities": []
       },
       {
         "pin_number": "4",
-        "name": [
-          "GND"
-        ],
+        "name": ["GND"],
         "description": "GND",
         "capabilities": []
       },
       {
         "pin_number": "5",
-        "name": [
-          "DI/IO0"
-        ],
+        "name": ["DI/IO0"],
         "description": "DI/IO0",
-        "capabilities": [
-          "spi_mosi"
-        ]
+        "capabilities": ["spi_mosi"]
       },
       {
         "pin_number": "6",
-        "name": [
-          "CLK"
-        ],
+        "name": ["CLK"],
         "description": "CLK",
-        "capabilities": [
-          "spi_sck"
-        ]
+        "capabilities": ["spi_sck"]
       },
       {
         "pin_number": "7",
-        "name": [
-          "~HOLD/IO3"
-        ],
+        "name": ["~HOLD/IO3"],
         "description": "~HOLD/IO3",
         "capabilities": []
       },
       {
         "pin_number": "8",
-        "name": [
-          "VCC"
-        ],
+        "name": ["VCC"],
         "description": "VCC",
         "capabilities": []
       }

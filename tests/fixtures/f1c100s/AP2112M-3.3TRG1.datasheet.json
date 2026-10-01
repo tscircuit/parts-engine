@@ -45,65 +45,49 @@
     "pin_information": [
       {
         "pin_number": "1",
-        "name": [
-          "VOUT"
-        ],
+        "name": ["VOUT"],
         "description": "Fixed 3.3V output",
         "capabilities": []
       },
       {
         "pin_number": "2",
-        "name": [
-          "NC"
-        ],
+        "name": ["NC"],
         "description": "Unconnected terminal",
         "capabilities": []
       },
       {
         "pin_number": "3",
-        "name": [
-          "NC"
-        ],
+        "name": ["NC"],
         "description": "Unconnected terminal",
         "capabilities": []
       },
       {
         "pin_number": "4",
-        "name": [
-          "NC"
-        ],
+        "name": ["NC"],
         "description": "Unconnected terminal",
         "capabilities": []
       },
       {
         "pin_number": "5",
-        "name": [
-          "EN"
-        ],
+        "name": ["EN"],
         "description": "Active-high enable input",
         "capabilities": []
       },
       {
         "pin_number": "6",
-        "name": [
-          "GND"
-        ],
+        "name": ["GND"],
         "description": "Ground",
         "capabilities": []
       },
       {
         "pin_number": "7",
-        "name": [
-          "GND"
-        ],
+        "name": ["GND"],
         "description": "Ground",
         "capabilities": []
       },
       {
         "pin_number": "8",
-        "name": [
-          "VIN"
-        ],
+        "name": ["VIN"],
         "description": "Regulator input; recommended 2.5-6V, subject to dropout",
         "capabilities": []
       }

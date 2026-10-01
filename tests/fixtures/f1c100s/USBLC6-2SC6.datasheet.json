@@ -31,49 +31,37 @@
     "pin_information": [
       {
         "pin_number": "1",
-        "name": [
-          "IO1"
-        ],
+        "name": ["IO1"],
         "description": "IO1",
         "capabilities": []
       },
       {
         "pin_number": "2",
-        "name": [
-          "GND"
-        ],
+        "name": ["GND"],
         "description": "GND",
         "capabilities": []
       },
       {
         "pin_number": "3",
-        "name": [
-          "IO2"
-        ],
+        "name": ["IO2"],
         "description": "IO2",
         "capabilities": []
       },
       {
         "pin_number": "4",
-        "name": [
-          "IO2"
-        ],
+        "name": ["IO2"],
         "description": "IO2",
         "capabilities": []
       },
       {
         "pin_number": "5",
-        "name": [
-          "VBUS"
-        ],
+        "name": ["VBUS"],
         "description": "VBUS",
         "capabilities": []
       },
       {
         "pin_number": "6",
-        "name": [
-          "IO1"
-        ],
+        "name": ["IO1"],
         "description": "IO1",
         "capabilities": []
       }

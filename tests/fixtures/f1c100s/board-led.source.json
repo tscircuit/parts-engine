@@ -6,9 +6,7 @@
     "name": "D_RGB",
     "manufacturer_part_number": "SK9822-A",
     "supplier_part_numbers": {
-      "jlcpcb": [
-        "C5378730"
-      ]
+      "jlcpcb": ["C5378730"]
     },
     "source_group_id": "source_group_6"
   },
@@ -17,11 +15,7 @@
     "source_port_id": "source_port_316",
     "name": "GND",
     "pin_number": 1,
-    "port_hints": [
-      "GND",
-      "pin1",
-      "1"
-    ],
+    "port_hints": ["GND", "pin1", "1"],
     "source_component_id": "source_component_104",
     "subcircuit_id": "subcircuit_source_group_6",
     "requires_ground": true,
@@ -32,11 +26,7 @@
     "source_port_id": "source_port_317",
     "name": "VCC",
     "pin_number": 2,
-    "port_hints": [
-      "VCC",
-      "pin2",
-      "2"
-    ],
+    "port_hints": ["VCC", "pin2", "2"],
     "source_component_id": "source_component_104",
     "subcircuit_id": "subcircuit_source_group_6",
     "requires_power": true,
@@ -47,11 +37,7 @@
     "source_port_id": "source_port_318",
     "name": "CKO",
     "pin_number": 3,
-    "port_hints": [
-      "CKO",
-      "pin3",
-      "3"
-    ],
+    "port_hints": ["CKO", "pin3", "3"],
     "source_component_id": "source_component_104",
     "subcircuit_id": "subcircuit_source_group_6"
   },
@@ -60,11 +46,7 @@
     "source_port_id": "source_port_319",
     "name": "SDO",
     "pin_number": 4,
-    "port_hints": [
-      "SDO",
-      "pin4",
-      "4"
-    ],
+    "port_hints": ["SDO", "pin4", "4"],
     "source_component_id": "source_component_104",
     "subcircuit_id": "subcircuit_source_group_6"
   },
@@ -73,11 +55,7 @@
     "source_port_id": "source_port_320",
     "name": "SDI",
     "pin_number": 5,
-    "port_hints": [
-      "SDI",
-      "pin5",
-      "5"
-    ],
+    "port_hints": ["SDI", "pin5", "5"],
     "source_component_id": "source_component_104",
     "subcircuit_id": "subcircuit_source_group_6",
     "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_6_connectivity_net28"
@@ -87,11 +65,7 @@
     "source_port_id": "source_port_321",
     "name": "CKI",
     "pin_number": 6,
-    "port_hints": [
-      "CKI",
-      "pin6",
-      "6"
-    ],
+    "port_hints": ["CKI", "pin6", "6"],
     "source_component_id": "source_component_104",
     "subcircuit_id": "subcircuit_source_group_6",
     "subcircuit_connectivity_map_key": "unnamedsubcircuitsubcircuit_source_group_6_connectivity_net29"
