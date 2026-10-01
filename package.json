@@ -12,10 +12,12 @@
   ],
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@tscircuit/props": "^0.0.672",
     "@types/bun": "latest",
     "circuit-json": "^0.0.469",
     "easyeda": "^0.0.350",
-    "tsup": "^8.4.0"
+    "tsup": "^8.4.0",
+    "zod": "^3.25.67"
   },
   "scripts": {
     "format": "biome format --write .",
@@ -25,9 +27,5 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "zod": "^3.25.67",
-    "@tscircuit/props": "^0.0.672"
   }
 }
