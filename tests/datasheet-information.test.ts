@@ -290,7 +290,10 @@ for (const stalledPhase of ["fetch", "body"] as const) {
       markStalled = resolve
     })
     const platformFetch = mock(async () => {
-      if (stalledPhase === "fetch") return new Promise<Response>(() => {})
+      if (stalledPhase === "fetch") {
+        markStalled()
+        return new Promise<Response>(() => {})
+      }
       const reply = response()
       Object.defineProperty(reply, "json", {
         value: () => {
