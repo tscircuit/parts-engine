@@ -285,17 +285,24 @@ for (const stalledPhase of ["fetch", "body"] as const) {
     const timeout = spyOn(AbortSignal, "timeout").mockReturnValue(
       controller.signal,
     )
+    let markStalled = () => {}
+    const stalled = new Promise<void>((resolve) => {
+      markStalled = resolve
+    })
     const platformFetch = mock(async () => {
       if (stalledPhase === "fetch") return new Promise<Response>(() => {})
       const reply = response()
       Object.defineProperty(reply, "json", {
-        value: () => new Promise(() => {}),
+        value: () => {
+          markStalled()
+          return new Promise(() => {})
+        },
       })
       return reply
     })
     const load = createDatasheetInformationLoader({ platformFetch })
     const pending = load({ manufacturerPartNumber: "REG-2V8" })
-    await Promise.resolve()
+    await stalled
     controller.abort()
     await expect(pending).rejects.toThrow("did not respond within 5 seconds")
     expect(timeout).toHaveBeenCalledWith(5_000)
