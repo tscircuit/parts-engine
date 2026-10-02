@@ -1,4 +1,4 @@
-import { createDatasheetTestEngine } from "./fixtures/create-datasheet-test-engine"
+import { JlcPcbPartsEngine, createDatasheetInformationLoader } from "../index"
 import { expect, test } from "bun:test"
 import { commonComponentProps } from "@tscircuit/props"
 import { any_circuit_element } from "circuit-json"
@@ -96,7 +96,7 @@ test("uploaded F1C and regulator records cover every physical pin using props at
 })
 
 test("real F1C import retains all 89 pins' attributes, including direction-only analog pins", async () => {
-  const engine = createDatasheetTestEngine({ platformFetch: fixtureFetch })
+  const engine = new JlcPcbPartsEngine({ platformFetch: fixtureFetch })
   const result = await engine.fetchPartCircuitJson({
     supplierPartNumber: "C1511928",
     includeDatasheetInformation: true,
@@ -141,7 +141,7 @@ test("real F1C import retains all 89 pins' attributes, including direction-only 
 })
 
 test("real 2.8V and 2.5V regulator imports match F1C supply requirements; old 1.8V does not", async () => {
-  const engine = createDatasheetTestEngine({
+  const engine = new JlcPcbPartsEngine({
     platformFetch: fixtureFetch,
     includeDatasheetInformation: true,
   })
@@ -173,7 +173,9 @@ test("real 2.8V and 2.5V regulator imports match F1C supply requirements; old 1.
     provides_power: true,
     provides_voltage: 2.5,
   })
-  const old = await engine.fetchDatasheetInformation({
+  const old = await createDatasheetInformationLoader({
+    platformFetch: fixtureFetch,
+  })({
     manufacturerPartNumber: "AP2112K-1.8TRG1",
   })
   expect(
@@ -194,7 +196,7 @@ test("real 2.8V and 2.5V regulator imports match F1C supply requirements; old 1.
 })
 
 test("every pin of all nine board ICs receives electrical attributes", async () => {
-  const engine = createDatasheetTestEngine({
+  const engine = new JlcPcbPartsEngine({
     platformFetch: fixtureFetch,
     includeDatasheetInformation: true,
   })
@@ -230,11 +232,9 @@ test("every pin of all nine board ICs receives electrical attributes", async () 
 })
 
 test("SK9822-A uses imported signal labels without merging unrelated manufacturer pin roles", async () => {
-  const engine = createDatasheetTestEngine({
+  const metadata = await createDatasheetInformationLoader({
     platformFetch: fixtureFetch,
-    includeDatasheetInformation: true,
-  })
-  const metadata = await engine.fetchDatasheetInformation({
+  })({
     manufacturerPartNumber: "SK9822-A",
   })
   const result = reconcileDatasheetCircuitJson({

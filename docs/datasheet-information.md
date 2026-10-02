@@ -1,140 +1,83 @@
-# Datasheet lookup and footprint reconciliation
+# Datasheet attributes in imported Circuit JSON
 
-Supplier engines find supplier parts and import supplier Circuit JSON. They do
-not know about api.tscircuit.com, registry options, or datasheet HTTP requests.
-The default registry provider is a separate exported function:
+Opt in to datasheet enrichment directly on the JLC parts engine:
 
 ```ts
-import {
-  JlcPcbPartsEngine,
-  fetchDatasheetInformation,
-  reconcileDatasheetCircuitJson,
-} from "@tscircuit/parts-engine"
+import { JlcPcbPartsEngine } from "@tscircuit/parts-engine"
 
-const supplier = new JlcPcbPartsEngine()
-const circuitJson = await supplier.fetchPartCircuitJson({ supplierPartNumber: "C460327" })
-const datasheet = await fetchDatasheetInformation({ manufacturerPartNumber: "AP2127K-2.8TRG1" })
-if (circuitJson && datasheet) {
-  const result = reconcileDatasheetCircuitJson({
-    circuitJson,
-    datasheetCircuitJson: datasheet.circuitJson,
-    attributePriority: "existing",
-  })
-  // result.circuitJson keeps the footprint's IDs, names, geometry and connectivity.
-  // Use the match diagnostics to build one warning for this component.
-}
-```
-
-`DatasheetInformation.circuitJson` contains one `source_component` with a
-manufacturer part number and canonical `source_port` records with snake_case
-attributes. Registry camelCase pin maps are validated against the exact
-`@tscircuit/props` schema and converted at this boundary. There is no second
-camelCase electrical map in the public result. PDF URLs, the footprinter string,
-generated TSX, and registry identifiers remain in the metadata envelope. Stored
-TSX is never evaluated and read requests never trigger extraction.
-
-Each manufacturer physical pin has a `pinN` or `pinA1` source-port identity.
-BGA ball labels remain in names/hints, without coercing them to numeric pins.
-Physical pins with no known electrical attributes remain represented, so
-coverage checks can distinguish an empty pin from an absent pin. Label-keyed
-attributes are separate source ports and can apply to several physical pins.
-Descriptions and operating-condition detail remain in the API's pin framework;
-the Circuit JSON projection carries structured electrical attributes only.
-
-## Explicit reconciliation
-
-`reconcileDatasheetCircuitJson` is exported and pure. It accepts two Circuit JSON
-arrays, an optional `sourceComponentId` target, and `attributePriority`.
-A multi-component target requires an explicit component ID. A different known
-manufacturer part number rejects before attributes are applied.
-
-Matching uses physical numbers, canonical ball names and imported hints. For
-supplier ports numbered numerically, a BGA ball hint can identify the matching
-manufacturer contact. Imported signal labels take precedence over fallback
-labels from manufacturer rows; physical entries override label attributes.
-This preserves the F1C board's SK9822-A signal roles despite alternate numbering.
-Shared label attributes apply to each matching pin. Conflicting labels or
-multiple candidate physical pins are reported instead of guessed.
-
-The result contains `matchedSourcePortIds`, `unmatchedSourcePortIds`,
-`missingAttributeSourcePortIds`, `unmatchedDatasheetSourcePortIds`, and
-`ambiguousMatches` with target/candidate source-port IDs. An empty matched pin
-still appears in `missingAttributeSourcePortIds`. Unmatched/ambiguous pins remain
-unchanged. No geometry, IDs, port names or connectivity are replaced or appended.
-
-`attributePriority: "datasheet"` is the default: known datasheet fields replace
-corresponding importer fields while omitted fields preserve existing attributes.
-Core can choose `"existing"` to retain explicitly configured attributes while
-filling missing fields. False and zero are meaningful and are preserved.
-
-## Composition
-
-Core can depend on the optional `PartsEngine.fetchDatasheetInformation` contract
-in the companion props PR. Its standard result carries Circuit JSON and optional
-metadata; existing engines need not implement the method. The registry provider
-is replaceable without modifying supplier engines:
-
-```ts
-import {
-  JlcPcbPartsEngine,
-  createDatasheetInformationLoader,
-  withDatasheetInformation,
-} from "@tscircuit/parts-engine"
-
-const engine = withDatasheetInformation(new JlcPcbPartsEngine(), {
-  fetchDatasheetInformation: createDatasheetInformationLoader({
-    datasheetApiBaseUrl: "https://api.tscircuit.com",
-  }),
+const engine = new JlcPcbPartsEngine()
+const circuitJson = await engine.fetchPartCircuitJson({
+  supplierPartNumber: "C460327",
+  includeDatasheetInformation: true,
 })
-const datasheet = await engine.fetchDatasheetInformation({ manufacturerPartNumber: "F1C100S" })
+// The regulator's output source_port includes provides_voltage and provides_power.
 ```
 
-The same adapter supports DigiKey, Mouser, or a custom engine/provider. It binds
-supplier methods to preserve their context and keeps unsupported supplier
-methods absent. Explicit datasheet calls always request the record; no enable
-flag is required for a deliberate call.
+`includeDatasheetInformation` defaults to false. A constructor default can enable
+it for every import; a per-call option overrides that default. The result is the
+ordinary Circuit JSON array, with electrical attributes on its existing source
+ports. No adapter or shared props interface change is required.
 
-Optional convenience enrichment remains on the adapter's `fetchPartCircuitJson`
-via `includeDatasheetInformation: true` (adapter default or per-call
-option). It uses supplier-reported manufacturer identity, rejects a requested
-voltage-variant mismatch before contacting the registry, and calls the same pure
-reconciliation function. The supplier engine itself receives no datasheet flags.
-For match diagnostics and Core warnings, use the explicit lookup/reconciliation
-path rather than the convenience array-only result.
+The supplier class orchestrates import and enrichment. Focused modules handle
+registry HTTP/schema/caching, conversion to Circuit JSON, and pure pin matching.
+Enrichment uses supplier-reported manufacturer identity; a different requested
+part number rejects before contacting the registry. Manufacturer searches require
+an exact match when enrichment is enabled, preventing a fuzzy search from
+substituting a different voltage variant.
+
+## Pin matching and attributes
+
+Registry pin maps are validated against the existing `@tscircuit/props` schema
+and converted to canonical Circuit JSON snake_case attributes. These validators
+are bundled from development dependencies; no runtime dependencies are added.
+Stored TSX is never evaluated and reads never trigger extraction.
+
+Physical pins use numbers or canonical `pinA1` ball names/hints. BGA labels are
+not coerced to numeric pins. Imported signal labels take precedence over fallback
+labels from manufacturer rows; physical entries override label attributes.
+Shared label attributes can apply to several pins. Conflicting labels or multiple
+physical candidates remain unchanged instead of guessing a role. Geometry, IDs,
+port names and connectivity are preserved. Known datasheet fields replace importer
+fields, while omitted fields preserve existing attributes. False and zero remain
+meaningful.
+
+`reconcileDatasheetCircuitJson` is also exported for callers that already have
+both arrays. It accepts `sourceComponentId` for multi-component circuits and
+`attributePriority: "existing"` to preserve explicit attributes. Its result
+includes matched, unmatched, empty, and ambiguous source-port IDs for coverage
+checks. A known manufacturer identity mismatch rejects.
+
+Standalone `fetchDatasheetInformation` and `createDatasheetInformationLoader`
+remain available when only a registry record is needed. Their standard result
+contains datasheet Circuit JSON and optional PDF URLs, footprinter string and
+TSX source text. Descriptions remain in the API's pin framework. Physical pins
+without known electrical attributes stay represented in the datasheet array;
+matching an empty pin does not imply complete attributes.
 
 ## Registry transport and caching
 
-`createDatasheetInformationLoader` configures an endpoint and default
-`platformFetch`. Per-call fetch overrides have isolated caches. The exported
-`fetchDatasheetInformation` uses a shared default provider; custom factory
-instances have their own bounded caches. Supplier proxies never affect registry
-requests.
+Constructor `datasheetApiBaseUrl` configures the registry endpoint. The engine's
+`platformFetch` and per-call fetch overrides apply to registry requests directly,
+without routing them through the EasyEDA proxy or forwarding its credentials.
 
-404 means no record. HTTP, transport, schema, mismatched-chip and timeout errors
-reject, so Core can distinguish failures from unavailable attributes. A real
-five-second deadline covers response headers and the JSON body, including custom
-fetch/body readers that ignore abort signals. Its error explains that pin
-attributes may not be populated.
+404 means no record and preserves the imported circuit. Transport, HTTP, schema,
+mismatched-chip and timeout errors reject. A real five-second deadline covers
+response headers and JSON body readers, including custom transports that ignore
+abort signals. The timeout error explains that pin attributes may not be populated;
+callers can surface it as a warning.
 
-Concurrent identical requests share a promise. Successful reads are cached for
-at most 60 seconds, honoring shorter Cache-Control max-age, Age, no-cache and
-no-store. Misses/failures are retried; at most 256 entries are retained per
-provider/fetch implementation. Returned Circuit JSON is cloned so consumer edits
+Concurrent identical reads share a promise. Successful reads are cached for at
+most 60 seconds, honoring shorter Cache-Control max-age, Age, no-cache and no-store.
+Caches are isolated per loader/fetch implementation and bounded to 256 entries.
+Misses and failures are retried. Returned Circuit JSON is cloned so consumer edits
 cannot change the cache.
 
-## Core rollout
+## Core follow-up
 
-1. Use the shared optional method to fetch datasheet Circuit JSON independently
-   of footprint import, then call explicit reconciliation on the rendered
-   component's source ports. No JLC lookup is required for a manually supplied
-   footprint. Reuse already fetched supplier geometry when available.
-2. Choose existing-attribute precedence for explicit user settings without
-   mutating parsed props. Apply reconciliation before source electrical checks.
-3. Combine missing, empty and ambiguous-pin diagnostics into one warning per
-   chip after lookup settles; distinguish lookup failures and respect DRC and
-   parts-engine disable controls.
-4. Add the 1.8V regulator/2.8V requirement regression and the passing 2.8V case.
-   Core warning orchestration and voltage-compatibility checks remain follow-ups.
+Core can consume the enriched Circuit JSON before electrical checks, preserve
+explicit user attributes, and aggregate missing attributes into one warning per
+chip. Warning orchestration and voltage compatibility checks remain follow-ups.
+No additional method on the shared props PartsEngine interface is introduced here.
 
 ## Practical F1C100S verification
 

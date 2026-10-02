@@ -11,4 +11,8 @@ export type EasyEdaProxyConfig = {
 export type JlcPcbPartsEngineOptions = {
   platformFetch?: PlatformFetch
   easyEdaProxyConfig?: EasyEdaProxyConfig
+  /** Include registry pin attributes in imported source ports. Defaults to false. */
+  includeDatasheetInformation?: boolean
+  /** Registry endpoint, independent of the EasyEDA proxy. */
+  datasheetApiBaseUrl?: string
 }

@@ -1,3 +1,6 @@
+import { createDatasheetInformationLoader } from "../datasheets/create-datasheet-information-loader"
+import { enrichPartCircuitJsonWithDatasheet } from "../datasheets/enrich-part-circuit-json-with-datasheet"
+import type { FetchDatasheetInformation } from "../datasheets/types"
 import type { FetchPartCircuitJsonParams } from "../parts-engine"
 import type { PartsEngine } from "@tscircuit/props"
 import {
@@ -22,12 +25,22 @@ export class JlcPcbPartsEngine implements PartsEngine {
   private readonly defaultPlatformFetch: JlcPcbPartsEngineOptions["platformFetch"]
   private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxyConfig"]
 
+  private readonly includeDatasheetInformation: boolean
+  private readonly fetchDatasheetInformation: FetchDatasheetInformation
+
   constructor({
     platformFetch: defaultPlatformFetch,
     easyEdaProxyConfig,
+    includeDatasheetInformation = false,
+    datasheetApiBaseUrl,
   }: JlcPcbPartsEngineOptions = {}) {
     this.defaultPlatformFetch = defaultPlatformFetch
     this.easyEdaProxyConfig = easyEdaProxyConfig
+    this.includeDatasheetInformation = includeDatasheetInformation
+    this.fetchDatasheetInformation = createDatasheetInformationLoader({
+      platformFetch: defaultPlatformFetch,
+      datasheetApiBaseUrl,
+    })
     this.fetchPartCircuitJson = this.fetchPartCircuitJson.bind(this)
   }
 
@@ -301,6 +314,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
     supplierPartNumber,
     manufacturerPartNumber,
     platformFetch: platformFetchOverride,
+    includeDatasheetInformation = this.includeDatasheetInformation,
   }: FetchPartCircuitJsonParams) {
     const easyEdaPlatformFetch = this.getEasyEdaPlatformFetch(
       platformFetchOverride,
@@ -319,7 +333,9 @@ export class JlcPcbPartsEngine implements PartsEngine {
           normalizePartNumber(component.mfr) ===
           normalizedManufacturerPartNumber,
       )
-      const componentMatch = exactManufacturerPartMatch ?? components?.[0]
+      const componentMatch =
+        exactManufacturerPartMatch ??
+        (includeDatasheetInformation ? undefined : components?.[0])
       resolvedSupplierPartNumber = componentMatch
         ? `C${componentMatch.lcsc}`
         : undefined
@@ -335,17 +351,25 @@ export class JlcPcbPartsEngine implements PartsEngine {
     )
     const parsed = EasyEdaJsonSchema.parse(rawEasyEdaJson)
     const circuitJson = convertEasyEdaJsonToCircuitJson(parsed)
-    // Manufacturer identity belongs to the supplier response, even when no
-    // datasheet provider is installed. Reconciliation verifies it separately.
+    // Keep supplier-reported identity for exact datasheet matching.
     const importedManufacturerPartNumber =
       parsed.dataStr.head.c_para["Manufacturer Part"]?.trim()
-    return circuitJson.map((element) =>
+    const partCircuitJson = circuitJson.map((element) =>
       element.type === "source_component" && importedManufacturerPartNumber
         ? {
             ...element,
             manufacturer_part_number: importedManufacturerPartNumber,
           }
         : element,
+    )
+    if (!includeDatasheetInformation) return partCircuitJson
+    return enrichPartCircuitJsonWithDatasheet(
+      {
+        circuitJson: partCircuitJson,
+        manufacturerPartNumber,
+        platformFetch: platformFetchOverride,
+      },
+      { fetchDatasheetInformation: this.fetchDatasheetInformation },
     )
   }
 }

@@ -4,11 +4,11 @@ import { storedDatasheetResponseSchema } from "../lib/datasheets/stored-datashee
 import assert from "node:assert/strict"
 import { readdir, readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { JlcPcbPartsEngine, withDatasheetInformation } from "../index"
+import { JlcPcbPartsEngine, fetchDatasheetInformation } from "../index"
 import { convertDatasheetToCircuitJson } from "../lib/datasheets/convert-datasheet-to-circuit-json"
 
 const fixtures = join(import.meta.dir, "../tests/fixtures/f1c100s")
-const engine = withDatasheetInformation(new JlcPcbPartsEngine(), {
+const engine = new JlcPcbPartsEngine({
   includeDatasheetInformation: true,
 })
 const results = []
@@ -29,7 +29,7 @@ for (const filename of (await readdir(fixtures)).filter((f) =>
     await response.json(),
   )
   assert.ok(stored.pin_information)
-  const information = await engine.fetchDatasheetInformation({
+  const information = await fetchDatasheetInformation({
     manufacturerPartNumber,
   })
   assert.ok(information, `${manufacturerPartNumber}: API record is missing`)
@@ -118,7 +118,7 @@ for (const filename of (await readdir(fixtures)).filter((f) =>
   })
   console.error(`Verified ${manufacturerPartNumber}: ${ports.length} pins`)
 }
-const old = await engine.fetchDatasheetInformation({
+const old = await fetchDatasheetInformation({
   manufacturerPartNumber: "AP2112K-1.8TRG1",
 })
 assert.equal(

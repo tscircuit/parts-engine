@@ -1,4 +1,4 @@
-import { createDatasheetTestEngine } from "./fixtures/create-datasheet-test-engine"
+import { JlcPcbPartsEngine } from "../index"
 import { afterEach, expect, mock, test } from "bun:test"
 import { source_port, type AnyCircuitElement } from "circuit-json"
 import { cache, type PlatformFetch } from "../lib/jlc-parts-engine"
@@ -55,7 +55,7 @@ afterEach(() => cache.clear())
 
 test("fetchPartCircuitJson includes electrical attributes on canonical source ports", async () => {
   const platformFetch = fixtureFetch()
-  const engine = createDatasheetTestEngine({
+  const engine = new JlcPcbPartsEngine({
     platformFetch,
     includeDatasheetInformation: true,
   })
@@ -116,7 +116,7 @@ test("per-call opt-in uses the override fetch and reuses cached datasheet result
     throw new Error("Wrong fetch")
   })
   const platformFetch = fixtureFetch()
-  const engine = createDatasheetTestEngine({ platformFetch: defaultFetch })
+  const engine = new JlcPcbPartsEngine({ platformFetch: defaultFetch })
   for (let i = 0; i < 2; i++) {
     const result = await engine.fetchPartCircuitJson({
       supplierPartNumber: "C11337",
@@ -139,7 +139,7 @@ test("per-call opt-in uses the override fetch and reuses cached datasheet result
 
 test("disabled and missing datasheet paths preserve the original Circuit JSON", async () => {
   const platformFetch = fixtureFetch(() => new Response(null, { status: 404 }))
-  const engine = createDatasheetTestEngine({ platformFetch })
+  const engine = new JlcPcbPartsEngine({ platformFetch })
   const plain = await engine.fetchPartCircuitJson({
     supplierPartNumber: "C11337",
   })
@@ -156,7 +156,7 @@ test("disabled and missing datasheet paths preserve the original Circuit JSON", 
 })
 
 test("datasheet transport failures remain distinguishable from missing attributes", async () => {
-  const engine = createDatasheetTestEngine({
+  const engine = new JlcPcbPartsEngine({
     platformFetch: fixtureFetch(() => new Response(null, { status: 503 })),
     includeDatasheetInformation: true,
   })
@@ -167,7 +167,7 @@ test("datasheet transport failures remain distinguishable from missing attribute
 
 test("a mismatched imported voltage variant is never enriched with the requested variant", async () => {
   const platformFetch = fixtureFetch()
-  const engine = createDatasheetTestEngine({
+  const engine = new JlcPcbPartsEngine({
     platformFetch,
     includeDatasheetInformation: true,
   })
@@ -190,18 +190,16 @@ test("enriched manufacturer lookup requires an exact match instead of a fuzzy vo
     { components: [{ mfr: "TLV70018DDCR", lcsc: 11337 }] },
   )
   const platformFetch = fixtureFetch()
-  const engine = createDatasheetTestEngine({
+  const engine = new JlcPcbPartsEngine({
     platformFetch,
     includeDatasheetInformation: true,
   })
-  await expect(
-    engine.fetchPartCircuitJson({ manufacturerPartNumber: "TLV70028DDCR" }),
-  ).rejects.toThrow("imported part is TLV70033DDCR")
   expect(
-    platformFetch.mock.calls.some(([input]) =>
-      String(input).includes("/datasheets/get"),
-    ),
-  ).toBe(false)
+    await engine.fetchPartCircuitJson({
+      manufacturerPartNumber: "TLV70028DDCR",
+    }),
+  ).toBeUndefined()
+  expect(platformFetch).not.toHaveBeenCalled()
 })
 
 test("enrichment uses physical pins, preserves omitted values, and does not mutate geometry", () => {
@@ -273,7 +271,7 @@ test("exact manufacturer searches return enriched Circuit JSON", async () => {
       components: [{ mfr: "TLV70033DDCR", lcsc: 11337 }],
     },
   )
-  const engine = createDatasheetTestEngine({ platformFetch: fixtureFetch() })
+  const engine = new JlcPcbPartsEngine({ platformFetch: fixtureFetch() })
   const result = await engine.fetchPartCircuitJson({
     manufacturerPartNumber: "TLV70033DDCR",
     includeDatasheetInformation: true,
@@ -365,7 +363,7 @@ test("fetchPartCircuitJson accepts props label-keyed attributes from the API", a
       },
     }),
   )
-  const engine = createDatasheetTestEngine({ platformFetch })
+  const engine = new JlcPcbPartsEngine({ platformFetch })
   const result = await engine.fetchPartCircuitJson({
     supplierPartNumber: "C11337",
     includeDatasheetInformation: true,
@@ -380,4 +378,43 @@ test("fetchPartCircuitJson accepts props label-keyed attributes from the API", a
       (element) => element.type === "source_port" && element.pin_number === 2,
     ),
   ).toMatchObject({ requires_ground: true })
+})
+
+test("datasheet enrichment bypasses the EasyEDA proxy and uses its configured registry endpoint", async () => {
+  const supplierFetch = fixtureFetch()
+  const registryUrl =
+    "https://registry.example/datasheets/get?chip_name=tlv70033ddcr"
+  const platformFetch = mock<PlatformFetch>(async (input, init) => {
+    const url = String(input)
+    if (url === registryUrl) {
+      expect(new Headers(init?.headers).has("x-api-key")).toBe(false)
+      expect(new Headers(init?.headers).has("x-target-url")).toBe(false)
+      return Response.json({ datasheet })
+    }
+    if (url === "https://proxy.example/proxy") {
+      expect(new Headers(init?.headers).get("x-api-key")).toBe("proxy-key")
+      const targetUrl = new Headers(init?.headers).get("x-target-url")
+      expect(targetUrl).toStartWith("https://easyeda.com/")
+      return supplierFetch(targetUrl!, init)
+    }
+    return supplierFetch(input, init)
+  })
+  const engine = new JlcPcbPartsEngine({
+    platformFetch,
+    datasheetApiBaseUrl: "https://registry.example",
+    includeDatasheetInformation: true,
+    easyEdaProxyConfig: {
+      proxyEndpointUrl: "https://proxy.example/proxy",
+      headers: { "x-api-key": "proxy-key" },
+    },
+  })
+  const result = await engine.fetchPartCircuitJson({
+    supplierPartNumber: "C11337",
+  })
+  expect(
+    result!.find((e) => e.type === "source_port" && e.pin_number === 5),
+  ).toMatchObject({ provides_voltage: "3.3V" })
+  expect(
+    platformFetch.mock.calls.filter(([input]) => String(input) === registryUrl),
+  ).toHaveLength(1)
 })

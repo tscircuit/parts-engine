@@ -18,7 +18,7 @@ type CacheEntry = {
 
 /** Per-engine, per-fetch cache: bounded storage and shared concurrent requests. */
 export const createDatasheetInformationLoader = (
-  options: DatasheetInformationOptions & { platformFetch?: PlatformFetch } = {},
+  options: DatasheetInformationOptions = {},
 ) => {
   const caches = new WeakMap<PlatformFetch, Map<string, CacheEntry>>()
 

@@ -1,14 +1,6 @@
 import { afterEach, expect, mock, spyOn, test } from "bun:test"
 import { any_circuit_element } from "circuit-json"
-import {
-  createDatasheetInformationLoader,
-  withDatasheetInformation,
-} from "../index"
-import {
-  DigiKeyPartsEngine,
-  JlcPcbPartsEngine,
-  MouserPartsEngine,
-} from "../index"
+import { createDatasheetInformationLoader } from "../index"
 
 const datasheet = {
   datasheet_id: "9bb0a071-58c6-42e8-a961-ef7599d141bc",
@@ -53,50 +45,36 @@ test("datasheet caches are bounded to 256 distinct chips", async () => {
   expect(platformFetch).toHaveBeenCalledTimes(258)
 })
 
-for (const Engine of [
-  JlcPcbPartsEngine,
-  DigiKeyPartsEngine,
-  MouserPartsEngine,
-]) {
-  test(`${Engine.name} has no registry integration; datasheet providers compose independently`, async () => {
-    const supplierFetch = mock(async () => {
-      throw new Error("Supplier should not be called")
-    })
-    const registryFetch = mock(async (_input: unknown) => response())
-    const supplier = new Engine({ platformFetch: supplierFetch })
-    expect("fetchDatasheetInformation" in supplier).toBe(false)
-    const engine = withDatasheetInformation(supplier, {
-      fetchDatasheetInformation: createDatasheetInformationLoader({
-        platformFetch: registryFetch,
-      }),
-    })
-    for (const manufacturerPartNumber of ["", "---", "!!!"])
-      expect(
-        await engine.fetchDatasheetInformation({ manufacturerPartNumber }),
-      ).toBeUndefined()
-    expect(registryFetch).not.toHaveBeenCalled()
-    const result = await engine.fetchDatasheetInformation({
-      manufacturerPartNumber: "REG-2V8",
-    })
-    expect(result).toMatchObject({
-      footprinterString: "sot23",
-      generatedTsx: datasheet.generated_tsx,
-    })
-    expect(
-      result!.circuitJson.find((e) => e.type === "source_port"),
-    ).toMatchObject({
-      pin_number: 3,
-      provides_voltage: "2.8V",
-      provides_power: true,
-    })
-    for (const element of result!.circuitJson)
-      expect(any_circuit_element.parse(element)).toEqual(element)
-    expect(registryFetch.mock.calls[0]?.[0]).toBe(
-      "https://api.tscircuit.com/datasheets/get?chip_name=reg-2v8",
-    )
-    expect(supplierFetch).not.toHaveBeenCalled()
+test("datasheet lookup works independently of any supplier engine", async () => {
+  const registryFetch = mock(async (_input: unknown) => response())
+  const fetchDatasheetInformation = createDatasheetInformationLoader({
+    platformFetch: registryFetch,
   })
-}
+  for (const manufacturerPartNumber of ["", "---", "!!!"])
+    expect(
+      await fetchDatasheetInformation({ manufacturerPartNumber }),
+    ).toBeUndefined()
+  expect(registryFetch).not.toHaveBeenCalled()
+  const result = await fetchDatasheetInformation({
+    manufacturerPartNumber: "REG-2V8",
+  })
+  expect(result).toMatchObject({
+    footprinterString: "sot23",
+    generatedTsx: datasheet.generated_tsx,
+  })
+  expect(
+    result!.circuitJson.find((e) => e.type === "source_port"),
+  ).toMatchObject({
+    pin_number: 3,
+    provides_voltage: "2.8V",
+    provides_power: true,
+  })
+  for (const element of result!.circuitJson)
+    expect(any_circuit_element.parse(element)).toEqual(element)
+  expect(registryFetch.mock.calls[0]?.[0]).toBe(
+    "https://api.tscircuit.com/datasheets/get?chip_name=reg-2v8",
+  )
+})
 
 test("concurrent normalized lookups share a request but not mutable returned attributes", async () => {
   const platformFetch = mock(async (_input: unknown) => response())
