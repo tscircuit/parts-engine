@@ -1,32 +1,12 @@
-import { commonComponentProps } from "@tscircuit/props"
-import { z } from "zod"
-import type { PlatformFetch } from "../jlc-parts-engine/types"
+import { storedDatasheetResponseSchema } from "./stored-datasheet-response-schema"
+import { withDatasheetRequestTimeout } from "./with-datasheet-request-timeout"
+import { convertDatasheetToCircuitJson } from "./convert-datasheet-to-circuit-json"
+import type { PlatformFetch } from "../platform-fetch"
 import type {
   DatasheetInformation,
   DatasheetInformationOptions,
   FetchDatasheetInformationParams,
 } from "./types"
-
-const responseSchema = z.object({
-  datasheet: z.object({
-    datasheet_id: z.string().uuid(),
-    chip_name: z.string(),
-    datasheet_pdf_urls: z.array(z.string()).nullish(),
-    pin_information: z
-      .array(
-        z.object({
-          pin_number: z.string(),
-          name: z.array(z.string()),
-          description: z.string(),
-          capabilities: z.array(z.string()),
-        }),
-      )
-      .nullish(),
-    pin_attributes: commonComponentProps.shape.pinAttributes.nullable(),
-    footprinter_string: z.string().nullish(),
-    generated_tsx: z.string().nullish(),
-  }),
-})
 
 const normalizeChipName = (chipName: string) =>
   chipName.replace(/[^0-9a-zA-Z_-]/g, "").toLowerCase()
@@ -45,11 +25,9 @@ export const createDatasheetInformationLoader = (
   return async ({
     manufacturerPartNumber,
     platformFetch,
-    includeDatasheetInformation = options.includeDatasheetInformation ?? false,
   }: FetchDatasheetInformationParams): Promise<
     DatasheetInformation | undefined
   > => {
-    if (!includeDatasheetInformation) return undefined
     const chipName = normalizeChipName(manufacturerPartNumber)
     if (!/[a-z0-9]/.test(chipName)) return undefined
     const fetcher = platformFetch ?? options.platformFetch ?? globalThis.fetch
@@ -77,20 +55,30 @@ export const createDatasheetInformationLoader = (
     // removes the entry after it is inserted below.
     entry.result = Promise.resolve().then(async () => {
       try {
-        const response = await fetcher(url.toString(), {
-          signal: AbortSignal.timeout(10_000),
-        })
-        if (response.status === 404) return undefined
-        if (!response.ok)
-          throw new Error(
-            `Datasheet lookup failed (${response.status}) for ${chipName}`,
+        const fetched = await withDatasheetRequestTimeout(async (signal) => {
+          const response = await fetcher(url.toString(), { signal })
+          if (response.status === 404) return undefined
+          if (!response.ok)
+            throw new Error(
+              `Datasheet lookup failed (${response.status}) for ${chipName}`,
+            )
+          const { datasheet } = storedDatasheetResponseSchema.parse(
+            await response.json(),
           )
-        const { datasheet } = responseSchema.parse(await response.json())
+          return { response, datasheet }
+        })
+        if (!fetched) return undefined
+        const { response, datasheet } = fetched
         if (normalizeChipName(datasheet.chip_name) !== chipName) {
           throw new Error(
             `Datasheet lookup returned a different chip for ${chipName}`,
           )
         }
+        const circuitJson = convertDatasheetToCircuitJson({
+          chipName: manufacturerPartNumber.trim(),
+          pinInformation: datasheet.pin_information,
+          pinAttributes: datasheet.pin_attributes,
+        })
         const cacheControl = response.headers.get("cache-control") ?? ""
         const maxAge = /(?:^|,)\s*max-age\s*=\s*(\d+)/i.exec(cacheControl)
         const age = Number(response.headers.get("age") ?? 0)
@@ -108,8 +96,7 @@ export const createDatasheetInformationLoader = (
           datasheetId: datasheet.datasheet_id,
           chipName: datasheet.chip_name,
           datasheetPdfUrls: datasheet.datasheet_pdf_urls,
-          pinInformation: datasheet.pin_information,
-          pinAttributes: datasheet.pin_attributes,
+          circuitJson,
           footprinterString: datasheet.footprinter_string,
           generatedTsx: datasheet.generated_tsx,
         }
@@ -125,3 +112,6 @@ export const createDatasheetInformationLoader = (
     return structuredClone(await entry.result)
   }
 }
+
+/** Default registry provider, reusable without any supplier engine. */
+export const fetchDatasheetInformation = createDatasheetInformationLoader()

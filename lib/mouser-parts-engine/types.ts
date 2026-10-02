@@ -1,7 +1,6 @@
-import type { DatasheetInformationOptions } from "../datasheets/types"
-import type { PlatformFetch } from "../jlc-parts-engine/types"
+import type { PlatformFetch } from "../platform-fetch"
 
-export type MouserPartsEngineOptions = DatasheetInformationOptions & {
+export type MouserPartsEngineOptions = {
   platformFetch?: PlatformFetch
   apiBaseUrl?: string
 }

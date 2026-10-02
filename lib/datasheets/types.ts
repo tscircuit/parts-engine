@@ -1,35 +1,28 @@
-import type { CommonComponentProps } from "@tscircuit/props"
-import type { PlatformFetch } from "../jlc-parts-engine/types"
+import type { AnyCircuitElement } from "circuit-json"
+import type { PlatformFetch } from "../platform-fetch"
 
+/** Supplier-independent electrical metadata; attributes use Circuit JSON fields. */
 export type DatasheetInformation = {
   datasheetId: string
   chipName: string
+  circuitJson: AnyCircuitElement[]
   datasheetPdfUrls?: string[] | null
-  pinInformation?:
-    | {
-        pin_number: string
-        name: string[]
-        description: string
-        capabilities: string[]
-      }[]
-    | null
-  /** Uses the TSX schema directly, including pin-number and label keys. */
-  pinAttributes?: CommonComponentProps["pinAttributes"] | null
   footprinterString?: string | null
-  /** Source text only. The parts engine never evaluates it. */
+  /** Source text only. Never evaluated by the parts engine. */
   generatedTsx?: string | null
 }
 
 export type DatasheetInformationOptions = {
-  /** Opt in to stored datasheet lookups. Defaults to false. */
-  includeDatasheetInformation?: boolean
-  /** Defaults to https://api.tscircuit.com. Independent of supplier API URLs. */
+  /** Registry endpoint; independent of supplier URLs and EasyEDA proxies. */
   datasheetApiBaseUrl?: string
+  platformFetch?: PlatformFetch
 }
 
 export type FetchDatasheetInformationParams = {
   manufacturerPartNumber: string
   platformFetch?: PlatformFetch
-  /** Overrides the engine option for this lookup. */
-  includeDatasheetInformation?: boolean
 }
+
+export type FetchDatasheetInformation = (
+  params: FetchDatasheetInformationParams,
+) => Promise<DatasheetInformation | undefined>

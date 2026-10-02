@@ -1,5 +1,9 @@
 import { afterEach, expect, mock, spyOn, test } from "bun:test"
-import { commonComponentProps } from "@tscircuit/props"
+import { any_circuit_element } from "circuit-json"
+import {
+  createDatasheetInformationLoader,
+  withDatasheetInformation,
+} from "../index"
 import {
   DigiKeyPartsEngine,
   JlcPcbPartsEngine,
@@ -35,18 +39,17 @@ test("datasheet caches are bounded to 256 distinct chips", async () => {
       },
     }),
   )
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch,
-    includeDatasheetInformation: true,
   })
   for (let i = 0; i < 257; i++) {
-    await engine.fetchDatasheetInformation({
+    await engine({
       manufacturerPartNumber: `REG-${i}`,
     })
   }
-  await engine.fetchDatasheetInformation({ manufacturerPartNumber: "REG-256" })
+  await engine({ manufacturerPartNumber: "REG-256" })
   expect(platformFetch).toHaveBeenCalledTimes(257)
-  await engine.fetchDatasheetInformation({ manufacturerPartNumber: "REG-0" })
+  await engine({ manufacturerPartNumber: "REG-0" })
   expect(platformFetch).toHaveBeenCalledTimes(258)
 })
 
@@ -55,70 +58,69 @@ for (const Engine of [
   DigiKeyPartsEngine,
   MouserPartsEngine,
 ]) {
-  test(`${Engine.name} only loads stored datasheets when enabled`, async () => {
-    const platformFetch = mock(async (_input: unknown) => response())
-    const disabled = new Engine({ platformFetch })
-    expect(
-      await disabled.fetchDatasheetInformation({
-        manufacturerPartNumber: "REG-2V8",
-      }),
-    ).toBeUndefined()
-    expect(platformFetch).not.toHaveBeenCalled()
-    const enabled = new Engine({
-      platformFetch,
-      includeDatasheetInformation: true,
+  test(`${Engine.name} has no registry integration; datasheet providers compose independently`, async () => {
+    const supplierFetch = mock(async () => {
+      throw new Error("Supplier should not be called")
     })
-    expect(
-      await enabled.fetchDatasheetInformation({
-        manufacturerPartNumber: "REG-2V8",
-        includeDatasheetInformation: false,
+    const registryFetch = mock(async (_input: unknown) => response())
+    const supplier = new Engine({ platformFetch: supplierFetch })
+    expect("fetchDatasheetInformation" in supplier).toBe(false)
+    const engine = withDatasheetInformation(supplier, {
+      fetchDatasheetInformation: createDatasheetInformationLoader({
+        platformFetch: registryFetch,
       }),
-    ).toBeUndefined()
-    expect(platformFetch).not.toHaveBeenCalled()
-    for (const manufacturerPartNumber of ["", "---", "!!!"]) {
+    })
+    for (const manufacturerPartNumber of ["", "---", "!!!"])
       expect(
-        await enabled.fetchDatasheetInformation({ manufacturerPartNumber }),
+        await engine.fetchDatasheetInformation({ manufacturerPartNumber }),
       ).toBeUndefined()
-    }
-    expect(platformFetch).not.toHaveBeenCalled()
-    const result = await enabled.fetchDatasheetInformation({
+    expect(registryFetch).not.toHaveBeenCalled()
+    const result = await engine.fetchDatasheetInformation({
       manufacturerPartNumber: "REG-2V8",
     })
     expect(result).toMatchObject({
-      pinAttributes: datasheet.pin_attributes,
-      pinInformation: datasheet.pin_information,
       footprinterString: "sot23",
       generatedTsx: datasheet.generated_tsx,
     })
-    expect(platformFetch.mock.calls[0]?.[0]).toBe(
+    expect(
+      result!.circuitJson.find((e) => e.type === "source_port"),
+    ).toMatchObject({
+      pin_number: 3,
+      provides_voltage: "2.8V",
+      provides_power: true,
+    })
+    for (const element of result!.circuitJson)
+      expect(any_circuit_element.parse(element)).toEqual(element)
+    expect(registryFetch.mock.calls[0]?.[0]).toBe(
       "https://api.tscircuit.com/datasheets/get?chip_name=reg-2v8",
     )
-    await disabled.fetchDatasheetInformation({
-      manufacturerPartNumber: "REG-2V8",
-      includeDatasheetInformation: true,
-    })
-    expect(platformFetch).toHaveBeenCalledTimes(2)
+    expect(supplierFetch).not.toHaveBeenCalled()
   })
 }
 
 test("concurrent normalized lookups share a request but not mutable returned attributes", async () => {
   const platformFetch = mock(async (_input: unknown) => response())
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch,
-    includeDatasheetInformation: true,
   })
   const results = await Promise.all(
     ["REG-2V8", "reg-2v8", " REG-2V8 "].map((manufacturerPartNumber) =>
-      engine.fetchDatasheetInformation({ manufacturerPartNumber }),
+      engine({ manufacturerPartNumber }),
     ),
   )
   expect(platformFetch).toHaveBeenCalledTimes(1)
-  results[0]!.pinAttributes!.pin3!.providesVoltage = 1.8
-  expect(results[1]!.pinAttributes!.pin3!.providesVoltage).toBe("2.8V")
+  const firstPort = results[0]!.circuitJson.find(
+    (e) => e.type === "source_port",
+  )!
+  firstPort.provides_voltage = 1.8
   expect(
-    (await engine.fetchDatasheetInformation({
+    results[1]!.circuitJson.find((e) => e.type === "source_port")!
+      .provides_voltage,
+  ).toBe("2.8V")
+  expect(
+    (await engine({
       manufacturerPartNumber: "REG-2V8",
-    }))!.pinAttributes!.pin3!.providesVoltage,
+    }))!.circuitJson.find((e) => e.type === "source_port")!.provides_voltage,
   ).toBe("2.8V")
 })
 
@@ -136,17 +138,17 @@ test("missing, failed, malformed and mismatched datasheets do not poison later r
     response(),
   ]
   const platformFetch = mock(async (_input: unknown) => replies.shift()!)
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch,
-    includeDatasheetInformation: true,
   })
-  const load = () =>
-    engine.fetchDatasheetInformation({ manufacturerPartNumber: "REG-2V8" })
+  const load = () => engine({ manufacturerPartNumber: "REG-2V8" })
   expect(await load()).toBeUndefined()
   await expect(load()).rejects.toThrow("503")
   await expect(load()).rejects.toThrow()
   await expect(load()).rejects.toThrow("different chip")
-  expect((await load())?.pinAttributes).toEqual(datasheet.pin_attributes)
+  expect(
+    (await load())?.circuitJson.find((e) => e.type === "source_port"),
+  ).toMatchObject({ provides_voltage: "2.8V" })
   expect(platformFetch).toHaveBeenCalledTimes(5)
 })
 
@@ -156,16 +158,15 @@ test("network failures are retried and fetch receives a bounded abort signal", a
     if (platformFetch.mock.calls.length === 1) throw new Error("network down")
     return response()
   })
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch,
-    includeDatasheetInformation: true,
   })
-  await expect(
-    engine.fetchDatasheetInformation({ manufacturerPartNumber: "REG-2V8" }),
-  ).rejects.toThrow("network down")
+  await expect(engine({ manufacturerPartNumber: "REG-2V8" })).rejects.toThrow(
+    "network down",
+  )
   expect(
     (
-      await engine.fetchDatasheetInformation({
+      await engine({
         manufacturerPartNumber: "REG-2V8",
       })
     )?.chipName,
@@ -178,12 +179,10 @@ test("cache lifetime accounts for HTTP Age and expires for corrected attributes"
   const platformFetch = mock(async (_input: unknown) =>
     response({ "Cache-Control": "public, max-age=60", Age: "55" }),
   )
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch,
-    includeDatasheetInformation: true,
   })
-  const load = () =>
-    engine.fetchDatasheetInformation({ manufacturerPartNumber: "REG-2V8" })
+  const load = () => engine({ manufacturerPartNumber: "REG-2V8" })
   await load()
   now += 4_999
   await load()
@@ -197,12 +196,10 @@ test("no-store responses are not retained after concurrent requests settle", asy
   const platformFetch = mock(async (_input: unknown) =>
     response({ "Cache-Control": "no-store" }),
   )
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch,
-    includeDatasheetInformation: true,
   })
-  const load = () =>
-    engine.fetchDatasheetInformation({ manufacturerPartNumber: "REG-2V8" })
+  const load = () => engine({ manufacturerPartNumber: "REG-2V8" })
   await Promise.all([load(), load()])
   expect(platformFetch).toHaveBeenCalledTimes(1)
   await load()
@@ -212,13 +209,12 @@ test("no-store responses are not retained after concurrent requests settle", asy
 test("custom endpoint and fetch overrides have isolated caches", async () => {
   const defaultFetch = mock(async (_input: unknown) => response())
   const overrideFetch = mock(async (_input: unknown) => response())
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch: defaultFetch,
-    includeDatasheetInformation: true,
     datasheetApiBaseUrl: "https://datasheets.example.test",
   })
-  await engine.fetchDatasheetInformation({ manufacturerPartNumber: "REG-2V8" })
-  await engine.fetchDatasheetInformation({
+  await engine({ manufacturerPartNumber: "REG-2V8" })
+  await engine({
     manufacturerPartNumber: "REG-2V8",
     platformFetch: overrideFetch,
   })
@@ -238,17 +234,16 @@ test("old records remain valid and pin attributes use the unmodified props schem
       },
     }),
   )
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetInformationLoader({
     platformFetch,
-    includeDatasheetInformation: true,
   })
   expect(
     (
-      await engine.fetchDatasheetInformation({
+      await engine({
         manufacturerPartNumber: "REG-2V8",
       })
-    )?.pinAttributes,
-  ).toBeUndefined()
+    )?.circuitJson.filter((e) => e.type === "source_port"),
+  ).toEqual([])
   const suppliedAttributes = {
     VOUT: { providesVoltage: 2.8, futureAttribute: true },
     "~RESET": { isInput: true, mustBeConnected: false },
@@ -262,14 +257,72 @@ test("old records remain valid and pin attributes use the unmodified props schem
       },
     }),
   )
-  expect(
-    (
-      await engine.fetchDatasheetInformation({
-        manufacturerPartNumber: "REG-2V8",
-        platformFetch: futureFetch,
-      })
-    )?.pinAttributes,
-  ).toEqual(
-    commonComponentProps.shape.pinAttributes.unwrap().parse(suppliedAttributes),
+  const result = await engine({
+    manufacturerPartNumber: "REG-2V8",
+    platformFetch: futureFetch,
+  })
+  const ports = result!.circuitJson.filter((e) => e.type === "source_port")
+  expect(ports.find((p) => p.name === "VOUT")).toMatchObject({
+    provides_voltage: 2.8,
+  })
+  expect(ports.find((p) => p.name === "VOUT")).not.toHaveProperty(
+    "futureAttribute",
   )
+  expect(ports.find((p) => p.name === "~RESET")).toMatchObject({
+    is_input: true,
+    must_be_connected: false,
+  })
+  expect(ports.find((p) => p.name === "GPIO0")).toMatchObject({
+    is_gpio: true,
+    is_bidirectional: true,
+    supports_i2c_sda: true,
+  })
+})
+
+for (const stalledPhase of ["fetch", "body"] as const) {
+  test(`5-second deadline bounds a stalled ${stalledPhase} even if custom transport ignores abort`, async () => {
+    const controller = new AbortController()
+    const timeout = spyOn(AbortSignal, "timeout").mockReturnValue(
+      controller.signal,
+    )
+    const platformFetch = mock(async () => {
+      if (stalledPhase === "fetch") return new Promise<Response>(() => {})
+      const reply = response()
+      Object.defineProperty(reply, "json", {
+        value: () => new Promise(() => {}),
+      })
+      return reply
+    })
+    const load = createDatasheetInformationLoader({ platformFetch })
+    const pending = load({ manufacturerPartNumber: "REG-2V8" })
+    await Promise.resolve()
+    controller.abort()
+    await expect(pending).rejects.toThrow("did not respond within 5 seconds")
+    expect(timeout).toHaveBeenCalledWith(5_000)
+    timeout.mockRestore()
+    platformFetch.mockImplementation(async () => response())
+    expect(await load({ manufacturerPartNumber: "REG-2V8" })).toBeDefined()
+  })
+}
+
+test("duplicate physical contacts reject conversion and are not cached", async () => {
+  const platformFetch = mock(async () =>
+    platformFetch.mock.calls.length === 1
+      ? Response.json({
+          datasheet: {
+            ...datasheet,
+            pin_information: [
+              ...datasheet.pin_information,
+              ...datasheet.pin_information,
+            ],
+          },
+        })
+      : response(),
+  )
+  const load = createDatasheetInformationLoader({ platformFetch })
+  await expect(load({ manufacturerPartNumber: "REG-2V8" })).rejects.toThrow(
+    "Duplicate datasheet pin",
+  )
+  expect(await load({ manufacturerPartNumber: "REG-2V8" })).toBeDefined()
+  expect(platformFetch).toHaveBeenCalledTimes(2)
 })

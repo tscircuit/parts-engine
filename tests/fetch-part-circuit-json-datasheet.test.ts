@@ -1,12 +1,9 @@
+import { createDatasheetTestEngine } from "./fixtures/create-datasheet-test-engine"
 import { afterEach, expect, mock, test } from "bun:test"
 import { source_port, type AnyCircuitElement } from "circuit-json"
-import {
-  JlcPcbPartsEngine,
-  cache,
-  type PlatformFetch,
-} from "../lib/jlc-parts-engine"
-import { enrichCircuitJsonWithDatasheet } from "../lib/datasheets/enrich-circuit-json-with-datasheet"
-import type { DatasheetInformation } from "../lib/datasheets/types"
+import { cache, type PlatformFetch } from "../lib/jlc-parts-engine"
+import { reconcileDatasheetCircuitJson } from "../index"
+import { convertDatasheetToCircuitJson } from "../lib/datasheets/convert-datasheet-to-circuit-json"
 import rawPart from "./fixtures/C11337.raweasy.json"
 
 const datasheet = {
@@ -58,7 +55,7 @@ afterEach(() => cache.clear())
 
 test("fetchPartCircuitJson includes electrical attributes on canonical source ports", async () => {
   const platformFetch = fixtureFetch()
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetTestEngine({
     platformFetch,
     includeDatasheetInformation: true,
   })
@@ -119,7 +116,7 @@ test("per-call opt-in uses the override fetch and reuses cached datasheet result
     throw new Error("Wrong fetch")
   })
   const platformFetch = fixtureFetch()
-  const engine = new JlcPcbPartsEngine({ platformFetch: defaultFetch })
+  const engine = createDatasheetTestEngine({ platformFetch: defaultFetch })
   for (let i = 0; i < 2; i++) {
     const result = await engine.fetchPartCircuitJson({
       supplierPartNumber: "C11337",
@@ -142,7 +139,7 @@ test("per-call opt-in uses the override fetch and reuses cached datasheet result
 
 test("disabled and missing datasheet paths preserve the original Circuit JSON", async () => {
   const platformFetch = fixtureFetch(() => new Response(null, { status: 404 }))
-  const engine = new JlcPcbPartsEngine({ platformFetch })
+  const engine = createDatasheetTestEngine({ platformFetch })
   const plain = await engine.fetchPartCircuitJson({
     supplierPartNumber: "C11337",
   })
@@ -159,7 +156,7 @@ test("disabled and missing datasheet paths preserve the original Circuit JSON", 
 })
 
 test("datasheet transport failures remain distinguishable from missing attributes", async () => {
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetTestEngine({
     platformFetch: fixtureFetch(() => new Response(null, { status: 503 })),
     includeDatasheetInformation: true,
   })
@@ -170,7 +167,7 @@ test("datasheet transport failures remain distinguishable from missing attribute
 
 test("a mismatched imported voltage variant is never enriched with the requested variant", async () => {
   const platformFetch = fixtureFetch()
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetTestEngine({
     platformFetch,
     includeDatasheetInformation: true,
   })
@@ -193,16 +190,18 @@ test("enriched manufacturer lookup requires an exact match instead of a fuzzy vo
     { components: [{ mfr: "TLV70018DDCR", lcsc: 11337 }] },
   )
   const platformFetch = fixtureFetch()
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetTestEngine({
     platformFetch,
     includeDatasheetInformation: true,
   })
+  await expect(
+    engine.fetchPartCircuitJson({ manufacturerPartNumber: "TLV70028DDCR" }),
+  ).rejects.toThrow("imported part is TLV70033DDCR")
   expect(
-    await engine.fetchPartCircuitJson({
-      manufacturerPartNumber: "TLV70028DDCR",
-    }),
-  ).toBeUndefined()
-  expect(platformFetch).not.toHaveBeenCalled()
+    platformFetch.mock.calls.some(([input]) =>
+      String(input).includes("/datasheets/get"),
+    ),
+  ).toBe(false)
 })
 
 test("enrichment uses physical pins, preserves omitted values, and does not mutate geometry", () => {
@@ -243,7 +242,7 @@ test("enrichment uses physical pins, preserves omitted values, and does not muta
     },
   ]
   const saved = structuredClone(input)
-  const information: DatasheetInformation = {
+  const information = {
     datasheetId: datasheet.datasheet_id,
     chipName: "REG-2V8",
     pinAttributes: {
@@ -252,7 +251,10 @@ test("enrichment uses physical pins, preserves omitted values, and does not muta
       pin99: { providesVoltage: 9 },
     },
   }
-  const result = enrichCircuitJsonWithDatasheet(input, information)
+  const result = reconcileDatasheetCircuitJson({
+    circuitJson: input,
+    datasheetCircuitJson: convertDatasheetToCircuitJson(information),
+  }).circuitJson
   expect(result[1]).toMatchObject({
     requires_power: true,
     requires_voltage: 2.8,
@@ -271,7 +273,7 @@ test("exact manufacturer searches return enriched Circuit JSON", async () => {
       components: [{ mfr: "TLV70033DDCR", lcsc: 11337 }],
     },
   )
-  const engine = new JlcPcbPartsEngine({ platformFetch: fixtureFetch() })
+  const engine = createDatasheetTestEngine({ platformFetch: fixtureFetch() })
   const result = await engine.fetchPartCircuitJson({
     manufacturerPartNumber: "TLV70033DDCR",
     includeDatasheetInformation: true,
@@ -315,7 +317,7 @@ test("props label keys enrich shared pins and physical keys override label attri
       name: "pin3",
     },
   ]
-  const information: DatasheetInformation = {
+  const information = {
     datasheetId: datasheet.datasheet_id,
     chipName: "EXAMPLE",
     pinAttributes: {
@@ -332,7 +334,10 @@ test("props label keys enrich shared pins and physical keys override label attri
       },
     ],
   }
-  const result = enrichCircuitJsonWithDatasheet(input, information)
+  const result = reconcileDatasheetCircuitJson({
+    circuitJson: input,
+    datasheetCircuitJson: convertDatasheetToCircuitJson(information),
+  }).circuitJson
   expect(result[1]).toMatchObject({
     requires_power: true,
     requires_voltage: "3.3V",
@@ -360,7 +365,7 @@ test("fetchPartCircuitJson accepts props label-keyed attributes from the API", a
       },
     }),
   )
-  const engine = new JlcPcbPartsEngine({ platformFetch })
+  const engine = createDatasheetTestEngine({ platformFetch })
   const result = await engine.fetchPartCircuitJson({
     supplierPartNumber: "C11337",
     includeDatasheetInformation: true,

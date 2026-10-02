@@ -1,9 +1,9 @@
+import { createDatasheetTestEngine } from "./fixtures/create-datasheet-test-engine"
 import { expect, test } from "bun:test"
 import { commonComponentProps } from "@tscircuit/props"
 import { any_circuit_element } from "circuit-json"
-import { enrichCircuitJsonWithDatasheet } from "../lib/datasheets/enrich-circuit-json-with-datasheet"
+import { reconcileDatasheetCircuitJson } from "../index"
 import boardLed from "./fixtures/f1c100s/board-led.source.json"
-import { JlcPcbPartsEngine } from "../lib/jlc-parts-engine/JlcPartsEngine"
 import type { PlatformFetch } from "../lib/jlc-parts-engine/types"
 import rawF1c from "./fixtures/f1c100s/C1511928.raweasy.json"
 import rawAnalog from "./fixtures/f1c100s/C460327.raweasy.json"
@@ -96,7 +96,7 @@ test("uploaded F1C and regulator records cover every physical pin using props at
 })
 
 test("real F1C import retains all 89 pins' attributes, including direction-only analog pins", async () => {
-  const engine = new JlcPcbPartsEngine({ platformFetch: fixtureFetch })
+  const engine = createDatasheetTestEngine({ platformFetch: fixtureFetch })
   const result = await engine.fetchPartCircuitJson({
     supplierPartNumber: "C1511928",
     includeDatasheetInformation: true,
@@ -141,7 +141,7 @@ test("real F1C import retains all 89 pins' attributes, including direction-only 
 })
 
 test("real 2.8V and 2.5V regulator imports match F1C supply requirements; old 1.8V does not", async () => {
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetTestEngine({
     platformFetch: fixtureFetch,
     includeDatasheetInformation: true,
   })
@@ -176,13 +176,25 @@ test("real 2.8V and 2.5V regulator imports match F1C supply requirements; old 1.
   const old = await engine.fetchDatasheetInformation({
     manufacturerPartNumber: "AP2112K-1.8TRG1",
   })
-  expect(old!.pinAttributes!.pin5!.providesVoltage).toBe(1.8)
-  expect(old!.pinAttributes!.pin5!.providesVoltage).not.toBe(2.8)
-  expect(old!.pinAttributes!.pin5!.providesVoltage).not.toBe(2.5)
+  expect(
+    old!.circuitJson
+      .filter((e) => e.type === "source_port")
+      .find((e) => e.pin_number === 5)!.provides_voltage,
+  ).toBe(1.8)
+  expect(
+    old!.circuitJson
+      .filter((e) => e.type === "source_port")
+      .find((e) => e.pin_number === 5)!.provides_voltage,
+  ).not.toBe(2.8)
+  expect(
+    old!.circuitJson
+      .filter((e) => e.type === "source_port")
+      .find((e) => e.pin_number === 5)!.provides_voltage,
+  ).not.toBe(2.5)
 })
 
 test("every pin of all nine board ICs receives electrical attributes", async () => {
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetTestEngine({
     platformFetch: fixtureFetch,
     includeDatasheetInformation: true,
   })
@@ -218,17 +230,17 @@ test("every pin of all nine board ICs receives electrical attributes", async () 
 })
 
 test("SK9822-A uses imported signal labels without merging unrelated manufacturer pin roles", async () => {
-  const engine = new JlcPcbPartsEngine({
+  const engine = createDatasheetTestEngine({
     platformFetch: fixtureFetch,
     includeDatasheetInformation: true,
   })
   const metadata = await engine.fetchDatasheetInformation({
     manufacturerPartNumber: "SK9822-A",
   })
-  const result = enrichCircuitJsonWithDatasheet(
-    boardLed.map((e) => any_circuit_element.parse(e)),
-    metadata!,
-  )
+  const result = reconcileDatasheetCircuitJson({
+    circuitJson: boardLed.map((e) => any_circuit_element.parse(e)),
+    datasheetCircuitJson: metadata!.circuitJson,
+  }).circuitJson
   const ports = result.filter((e) => e.type === "source_port")
   const pin = (n: number) => ports.find((p) => p.pin_number === n)!
   expect(pin(1)).toMatchObject({ requires_ground: true })

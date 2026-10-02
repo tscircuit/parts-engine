@@ -1,23 +1,14 @@
-import type { DatasheetInformationOptions } from "../datasheets/types"
-export type PlatformFetch = (
-  input: Parameters<typeof fetch>[0],
-  init?: Parameters<typeof fetch>[1],
-) => ReturnType<typeof fetch>
+import type { PlatformFetch } from "../platform-fetch"
+export type { PlatformFetch } from "../platform-fetch"
 
-export type FetchPartCircuitJsonParams = {
-  supplierPartNumber?: string
-  manufacturerPartNumber?: string
-  platformFetch?: PlatformFetch
-  /** Include stored electrical attributes on source_port records. Overrides the engine option. */
-  includeDatasheetInformation?: boolean
-}
+export type { FetchPartCircuitJsonParams } from "../parts-engine"
 
 export type EasyEdaProxyConfig = {
   proxyEndpointUrl: string
   headers?: Record<string, string>
 }
 
-export type JlcPcbPartsEngineOptions = DatasheetInformationOptions & {
+export type JlcPcbPartsEngineOptions = {
   platformFetch?: PlatformFetch
   easyEdaProxyConfig?: EasyEdaProxyConfig
 }
