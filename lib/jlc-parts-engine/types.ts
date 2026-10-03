@@ -1,13 +1,7 @@
-export type PlatformFetch = (
-  input: Parameters<typeof fetch>[0],
-  init?: Parameters<typeof fetch>[1],
-) => ReturnType<typeof fetch>
+import type { PlatformFetch } from "../platform-fetch"
+export type { PlatformFetch } from "../platform-fetch"
 
-export type FetchPartCircuitJsonParams = {
-  supplierPartNumber?: string
-  manufacturerPartNumber?: string
-  platformFetch?: PlatformFetch
-}
+export type { FetchPartCircuitJsonParams } from "../parts-engine"
 
 export type EasyEdaProxyConfig = {
   proxyEndpointUrl: string
@@ -17,4 +11,8 @@ export type EasyEdaProxyConfig = {
 export type JlcPcbPartsEngineOptions = {
   platformFetch?: PlatformFetch
   easyEdaProxyConfig?: EasyEdaProxyConfig
+  /** Include registry pin attributes in imported source ports. Defaults to false. */
+  includeDatasheetInformation?: boolean
+  /** Registry endpoint, independent of the EasyEDA proxy. */
+  datasheetApiBaseUrl?: string
 }

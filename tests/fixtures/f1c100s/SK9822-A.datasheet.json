@@ -1,0 +1,72 @@
+{
+  "datasheet": {
+    "datasheet_id": "9c4b494a-1046-47e8-b90a-4d3cf0b4f64b",
+    "chip_name": "SK9822-A",
+    "pin_attributes": {
+      "CKI": {
+        "isInput": true
+      },
+      "CKO": {
+        "isOutput": true
+      },
+      "GND": {
+        "requiresGround": true,
+        "mustBeConnected": true
+      },
+      "SDI": {
+        "isInput": true
+      },
+      "SDO": {
+        "isOutput": true
+      },
+      "VCC": {
+        "requiresPower": true,
+        "requiresVoltage": 5,
+        "mustBeConnected": true,
+        "shouldHaveDecouplingCapacitor": true
+      }
+    },
+    "footprinter_string": null,
+    "datasheet_pdf_urls": [
+      "https://datasheet.lcsc.com/datasheet/pdf/67720c5cc6abfd58bd021a2b86352a05.pdf?productCode=C5378730"
+    ],
+    "pin_information": [
+      {
+        "pin_number": "1",
+        "name": ["SDI"],
+        "description": "SDI",
+        "capabilities": []
+      },
+      {
+        "pin_number": "2",
+        "name": ["CKI"],
+        "description": "CKI",
+        "capabilities": []
+      },
+      {
+        "pin_number": "3",
+        "name": ["GND"],
+        "description": "GND",
+        "capabilities": []
+      },
+      {
+        "pin_number": "4",
+        "name": ["VCC", "VDD"],
+        "description": "VCC",
+        "capabilities": []
+      },
+      {
+        "pin_number": "5",
+        "name": ["CKO"],
+        "description": "CKO",
+        "capabilities": []
+      },
+      {
+        "pin_number": "6",
+        "name": ["SDO"],
+        "description": "SDO",
+        "capabilities": []
+      }
+    ]
+  }
+}

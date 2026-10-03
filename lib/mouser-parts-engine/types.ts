@@ -1,4 +1,4 @@
-import type { PlatformFetch } from "../jlc-parts-engine/types"
+import type { PlatformFetch } from "../platform-fetch"
 
 export type MouserPartsEngineOptions = {
   platformFetch?: PlatformFetch
