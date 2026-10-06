@@ -14,3 +14,7 @@ export { reconcileDatasheetCircuitJson } from "./lib/datasheets/reconcile-datash
 export type { DatasheetReconciliation } from "./lib/datasheets/reconcile-datasheet-circuit-json"
 export type { FetchDatasheetInformation } from "./lib/datasheets/types"
 export type { FetchPartCircuitJsonParams } from "./lib/parts-engine"
+export type {
+  FetchPartAvailabilityParams,
+  PartAvailability,
+} from "@tscircuit/props"
