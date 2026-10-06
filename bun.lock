@@ -6,7 +6,7 @@
       "name": "@tscircuit/parts-engine",
       "devDependencies": {
         "@biomejs/biome": "^1.9.4",
-        "@tscircuit/props": "^0.0.672",
+        "@tscircuit/props": "https://pkg.pr.new/@tscircuit/props@f9fd53a",
         "@types/bun": "latest",
         "circuit-json": "^0.0.509",
         "easyeda": "^0.0.350",
@@ -141,7 +141,7 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.40.0", "", { "os": "win32", "cpu": "x64" }, "sha512-lpPE1cLfP5oPzVjKMx10pgBmKELQnFJXHgvtHCtuJWOv8MxqdEIMNtgHgBFf7Ea2/7EuVwa9fodWUfXAlXZLZQ=="],
 
-    "@tscircuit/props": ["@tscircuit/props@0.0.672", "", { "peerDependencies": { "circuit-json": "*", "react": "*", "zod": "*" } }, "sha512-0KlP7/rNuc4wOhozHAtz53JXcBzOEUXoEaxniOGP9mZOnOP2ObcilPV5FNJs1ERCqChKck0xy/rR13rtsi7Ohw=="],
+    "@tscircuit/props": ["@tscircuit/props@https://pkg.pr.new/@tscircuit/props@f9fd53a", { "peerDependencies": { "circuit-json": "*", "react": "*", "zod": "*" } }, "sha512-jlOBmve/8kbPNBKbfCtD+eoC1WLI1TkchGuiBC4g0Re8ABKqBkvN0vdKkB9aF/fqXJtmGbV0ZZUJLjjd75+PXg=="],
 
     "@types/bun": ["@types/bun@1.2.10", "", { "dependencies": { "bun-types": "1.2.10" } }, "sha512-eilv6WFM3M0c9ztJt7/g80BDusK98z/FrFwseZgT4bXCq2vPhXD4z8R3oddmAn+R/Nmz9vBn4kweJKmGTZj+lg=="],
 

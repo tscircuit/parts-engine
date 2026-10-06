@@ -3,6 +3,8 @@ import { enrichPartCircuitJsonWithDatasheet } from "../datasheets/enrich-part-ci
 import type { FetchDatasheetInformation } from "../datasheets/types"
 import type { FetchPartCircuitJsonParams } from "../parts-engine"
 import type { PartsEngine } from "@tscircuit/props"
+import type { FetchPartAvailabilityParams } from "@tscircuit/props"
+import { fetchJlcPartAvailability } from "./fetch-jlc-part-availability"
 import {
   fetchEasyEDAComponent,
   EasyEdaJsonSchema,
@@ -42,6 +44,15 @@ export class JlcPcbPartsEngine implements PartsEngine {
       datasheetApiBaseUrl,
     })
     this.fetchPartCircuitJson = this.fetchPartCircuitJson.bind(this)
+    this.fetchPartAvailability = this.fetchPartAvailability.bind(this)
+  }
+
+  async fetchPartAvailability(request: FetchPartAvailabilityParams) {
+    return fetchJlcPartAvailability({
+      ...request,
+      platformFetch:
+        request.platformFetch ?? this.defaultPlatformFetch ?? globalThis.fetch,
+    })
   }
 
   private getEasyEdaPlatformFetch(

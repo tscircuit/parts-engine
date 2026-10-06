@@ -4,6 +4,18 @@ The tscircuit platform parts engine.
 
 ## Supplier engines
 
+`jlcPartsEngine.fetchPartAvailability({ supplierName: "jlcpcb", supplierPartNumber: "C1525" })`
+returns `{ stock, price, currency, checkedAt }`. Stock is the available unit count;
+price is the per-unit quote at the lowest quantity tier, in the stated ISO currency
+(USD for JLCPCB). Unknown stock and price are `null`. The timestamp records when
+the lookup ran; jlcsearch may cache its supplier data.
+
+The method accepts optional `platformFetch` and `signal` overrides, bypasses the
+part-selection cache, and limits requests to 10 seconds. Unsupported suppliers
+return `undefined` without a request; HTTP and network failures reject so callers
+can distinguish failed lookups. Availability remains optional on `PartsEngine`,
+so existing engines need no changes.
+
 ```ts
 import {
   digikeyPartsEngine,
