@@ -6,25 +6,25 @@ export const getJlcPartsCached = async (name: any, params: any) => {
     json: "true",
   }).toString()
 
-  if (cache.has(paramString)) {
-    return cache.get(paramString)
+  const requestUrl = `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`
+
+  if (cache.has(requestUrl)) {
+    return cache.get(requestUrl)
   }
 
   const requestPromise = (async () => {
-    const response = await fetch(
-      `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`,
-    )
+    const response = await fetch(requestUrl)
     return response.json()
   })()
-  cache.set(paramString, requestPromise)
+  cache.set(requestUrl, requestPromise)
 
   try {
     const responseJson = await requestPromise
-    cache.set(paramString, responseJson)
+    cache.set(requestUrl, responseJson)
     return responseJson
   } catch (error) {
-    if (cache.get(paramString) === requestPromise) {
-      cache.delete(paramString)
+    if (cache.get(requestUrl) === requestPromise) {
+      cache.delete(requestUrl)
     }
     throw error
   }
