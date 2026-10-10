@@ -19,7 +19,7 @@ describe("pin-header row compatibility reproduction", () => {
   beforeEach(() => {
     cache.clear()
     fetchCount = 0
-    globalThis.fetch = (async () => {
+    globalThis.fetch = (async (_url: string) => {
       fetchCount += 1
       return Response.json({
         // Three 1x16 candidates precede an available 2x8 candidate to
