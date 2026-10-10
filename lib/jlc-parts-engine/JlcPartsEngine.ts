@@ -23,18 +23,6 @@ import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 const normalizePartNumber = (partNumber: unknown) =>
   typeof partNumber === "string" ? partNumber.trim().toLowerCase() : undefined
 
-const getPinHeaderRowCount = (
-  footprinterString?: string,
-): number | undefined => {
-  if (!footprinterString || !/^pinrow\d+(?:_|$)/i.test(footprinterString)) {
-    return undefined
-  }
-
-  const rows = footprinterString.match(/(?:^|_)rows(\d+)(?:_|$)/i)
-  // Generated pinrow footprints have one row unless explicitly overridden.
-  return rows ? Number(rows[1]) : 1
-}
-
 export class JlcPcbPartsEngine implements PartsEngine {
   private readonly defaultPlatformFetch: JlcPcbPartsEngineOptions["platformFetch"]
   private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxyConfig"]
@@ -125,7 +113,12 @@ export class JlcPcbPartsEngine implements PartsEngine {
         "headers",
         getPinHeaderSearchParams(sourceComponent, footprinterString),
       )
-      const rowCount = getPinHeaderRowCount(footprinterString)
+      let rowCount: number | undefined
+      if (footprinterString && /^pinrow\d+(?:_|$)/i.test(footprinterString)) {
+        const rows = footprinterString.match(/(?:^|_)rows(\d+)(?:_|$)/i)
+        // Generated pinrow footprints default to one row.
+        rowCount = rows ? Number(rows[1]) : 1
+      }
       const compatibleHeaders = headers?.filter(
         (header: { num_rows?: number }) =>
           rowCount === undefined || header.num_rows === rowCount,
