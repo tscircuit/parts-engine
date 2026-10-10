@@ -50,23 +50,26 @@ describe("pin-header row compatibility reproduction", () => {
     })
   })
 
-  test("double-row lookup retains the available 2x8 header before limiting candidates", async () => {
-    // The response contains a matching part, so its absence from findPart's
-    // result cannot be attributed to missing two-row inventory.
-    expect(
-      headers
-        .filter((candidate) => candidate.num_rows === 2)
-        .map((candidate) => `C${candidate.lcsc}`),
-    ).toEqual(["C7501279"])
+  test.failing(
+    "double-row lookup retains the available 2x8 header before limiting candidates",
+    async () => {
+      // The response contains a matching part, so its absence from findPart's
+      // result cannot be attributed to missing two-row inventory.
+      expect(
+        headers
+          .filter((candidate) => candidate.num_rows === 2)
+          .map((candidate) => `C${candidate.lcsc}`),
+      ).toEqual(["C7501279"])
 
-    const result = await jlcPartsEngine.findPart({
-      sourceComponent: header,
-      footprinterString: "pinrow16_p2.54_nopinlabels_rows2",
-    })
+      const result = await jlcPartsEngine.findPart({
+        sourceComponent: header,
+        footprinterString: "pinrow16_p2.54_nopinlabels_rows2",
+      })
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
-    // Intentionally fails on the current implementation: it returns the
-    // same three single-row parts as the control and drops C7501279.
-    expect(result).toEqual({ jlcpcb: ["C7501279"] })
-  })
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+      // Known failure tracked with test.failing: the implementation returns the
+      // same three single-row parts as the control and drops C7501279.
+      expect(result).toEqual({ jlcpcb: ["C7501279"] })
+    },
+  )
 })
