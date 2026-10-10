@@ -1,15 +1,8 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  type Mock,
-  spyOn,
-  test,
-} from "bun:test"
+import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import type { AnySourceComponent } from "circuit-json"
 import { cache, jlcPartsEngine } from "../lib/jlc-parts-engine"
-import headers from "./fixtures/headers-16pin-mixed-rows.json"
+
+const originalFetch = globalThis.fetch
 
 const header: AnySourceComponent = {
   type: "source_component",
@@ -21,20 +14,28 @@ const header: AnySourceComponent = {
 }
 
 describe("pin-header row compatibility reproduction", () => {
-  let fetchSpy: Mock<typeof fetch>
+  let fetchCount: number
 
   beforeEach(() => {
     cache.clear()
-    // Reduced real catalog records, deliberately ordered with three 1x16
-    // candidates before an available 2x8 candidate to exercise the result limit.
-    // This is a deterministic fixture, not a snapshot of live API ordering.
-    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
-      Response.json({ headers }),
-    )
+    fetchCount = 0
+    globalThis.fetch = (async () => {
+      fetchCount += 1
+      return Response.json({
+        // Three 1x16 candidates precede an available 2x8 candidate to
+        // exercise the result limit; this is not live catalog ordering.
+        headers: [
+          { lcsc: "7501270", num_rows: 1 },
+          { lcsc: "7430372", num_rows: 1 },
+          { lcsc: "18078209", num_rows: 1 },
+          { lcsc: "7501279", num_rows: 2 },
+        ],
+      })
+    }) as typeof fetch
   })
 
   afterEach(() => {
-    fetchSpy.mockRestore()
+    globalThis.fetch = originalFetch
     cache.clear()
   })
 
@@ -44,7 +45,7 @@ describe("pin-header row compatibility reproduction", () => {
       footprinterString: "pinrow16_p2.54_nopinlabels",
     })
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(fetchCount).toBe(1)
     expect(result).toEqual({
       jlcpcb: ["C7501270", "C7430372", "C18078209"],
     })
@@ -53,20 +54,12 @@ describe("pin-header row compatibility reproduction", () => {
   test.failing(
     "double-row lookup retains the available 2x8 header before limiting candidates",
     async () => {
-      // The response contains a matching part, so its absence from findPart's
-      // result cannot be attributed to missing two-row inventory.
-      expect(
-        headers
-          .filter((candidate) => candidate.num_rows === 2)
-          .map((candidate) => `C${candidate.lcsc}`),
-      ).toEqual(["C7501279"])
-
       const result = await jlcPartsEngine.findPart({
         sourceComponent: header,
         footprinterString: "pinrow16_p2.54_nopinlabels_rows2",
       })
 
-      expect(fetchSpy).toHaveBeenCalledTimes(1)
+      expect(fetchCount).toBe(1)
       // Known failure tracked with test.failing: the implementation returns the
       // same three single-row parts as the control and drops C7501279.
       expect(result).toEqual({ jlcpcb: ["C7501279"] })
