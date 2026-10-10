@@ -1,0 +1,42 @@
+[
+  {
+    "lcsc": 7501270,
+    "mfr": "ZX-PZ2.54-1-16PZZ",
+    "pitch_mm": 2.54,
+    "num_rows": 1,
+    "num_pins": 16,
+    "num_pins_per_row": 16,
+    "gender": "male",
+    "is_basic": false
+  },
+  {
+    "lcsc": 7430372,
+    "mfr": "DS1021-1x16SF11-B",
+    "pitch_mm": 2.54,
+    "num_rows": 1,
+    "num_pins": 16,
+    "num_pins_per_row": 16,
+    "gender": "male",
+    "is_basic": false
+  },
+  {
+    "lcsc": 18078209,
+    "mfr": "BX-PZ2.54-1-16PZZ",
+    "pitch_mm": 2.54,
+    "num_rows": 1,
+    "num_pins": 16,
+    "num_pins_per_row": 16,
+    "gender": "male",
+    "is_basic": false
+  },
+  {
+    "lcsc": 7501279,
+    "mfr": "ZX-PZ2.54-2-8PZZ",
+    "pitch_mm": 2.54,
+    "num_rows": 2,
+    "num_pins": 16,
+    "num_pins_per_row": 8,
+    "gender": "male",
+    "is_basic": false
+  }
+]
