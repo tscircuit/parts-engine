@@ -17,6 +17,7 @@ import {
   isCompatiblePcbMountJstConnector,
 } from "./get-jst-connector-search-config"
 import { getPinHeaderSearchParams } from "./get-pin-header-search-params"
+import { getPinHeaderRowCount } from "./get-pin-header-row-count"
 import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
 import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 
@@ -113,8 +114,13 @@ export class JlcPcbPartsEngine implements PartsEngine {
         "headers",
         getPinHeaderSearchParams(sourceComponent, footprinterString),
       )
+      const rowCount = getPinHeaderRowCount(footprinterString)
+      const compatibleHeaders = headers?.filter(
+        (header: { num_rows?: number }) =>
+          rowCount === undefined || header.num_rows === rowCount,
+      )
       return {
-        jlcpcb: withBasicPartPreference(headers)
+        jlcpcb: withBasicPartPreference(compatibleHeaders)
           .map((h: any) => `C${h.lcsc}`)
           .slice(0, 3),
       }

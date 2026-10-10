@@ -65,8 +65,79 @@ describe("pin-header row compatibility reproduction", () => {
     })
 
     expect(fetchSpy).toHaveBeenCalledTimes(1)
-    // Intentionally fails on the current implementation: it returns the
-    // same three single-row parts as the control and drops C7501279.
     expect(result).toEqual({ jlcpcb: ["C7501279"] })
+  })
+
+  test("recognizes rows2 before pitch and other footprint options", async () => {
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+      footprinterString: "pinrow16_rows2_p2.54mm_id1mm_od1.5mm",
+    })
+
+    expect(result).toEqual({ jlcpcb: ["C7501279"] })
+  })
+
+  test("single-row and double-row lookups independently filter a shared cached response", async () => {
+    const doubleRowResult = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+      footprinterString: "pinrow16_p2.54_rows2",
+    })
+    const singleRowResult = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+      footprinterString: "pinrow16_p2.54_rows1",
+    })
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(doubleRowResult).toEqual({ jlcpcb: ["C7501279"] })
+    expect(singleRowResult).toEqual({
+      jlcpcb: ["C7501270", "C7430372", "C18078209"],
+    })
+  })
+
+  test("rejects incompatible and unknown rows even when they are basic parts", async () => {
+    fetchSpy.mockResolvedValue(
+      Response.json({
+        headers: [
+          { lcsc: 1, is_basic: true, num_rows: 1 },
+          { lcsc: 2, is_basic: true },
+          { lcsc: 3, is_basic: false, num_rows: 2 },
+          { lcsc: 4, is_basic: true, num_rows: 2 },
+        ],
+      }),
+    )
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+      footprinterString: "pinrow16_p2.54_rows2",
+    })
+
+    expect(result).toEqual({ jlcpcb: ["C4", "C3"] })
+  })
+
+  test("returns no candidates when the catalog has no compatible rows", async () => {
+    fetchSpy.mockResolvedValue(
+      Response.json({
+        headers: headers.filter((candidate) => candidate.num_rows === 1),
+      }),
+    )
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+      footprinterString: "pinrow16_p2.54_rows2",
+    })
+
+    expect(result).toEqual({ jlcpcb: [] })
+  })
+
+  test("preserves candidate selection when the footprint row count is unknown", async () => {
+    fetchSpy.mockResolvedValue(
+      Response.json({ headers: [{ lcsc: 1 }, { lcsc: 2 }] }),
+    )
+
+    const result = await jlcPartsEngine.findPart({
+      sourceComponent: header,
+    })
+
+    expect(result).toEqual({ jlcpcb: ["C1", "C2"] })
   })
 })
