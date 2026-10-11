@@ -140,8 +140,3 @@ test("a missing datasheet leaves the imported circuit unchanged", async () => {
     ),
   ).toBe(circuitJson)
 })
-
-test("report resolved circuit-json dependency for lockfile validation", async () => {
-  const lockfile = await Bun.file("bun.lock").text()
-  console.log(lockfile.split("\n").find((line) => line.includes('["circuit-json@')))
-})
