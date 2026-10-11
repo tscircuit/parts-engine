@@ -16,7 +16,10 @@ const circuitJson = await engine.fetchPartCircuitJson({
 `includeDatasheetInformation` defaults to false. A constructor default can enable
 it for every import; a per-call option overrides that default. The result is the
 ordinary Circuit JSON array, with electrical attributes on its existing source
-ports. No adapter or shared props interface change is required.
+ports and a `source_datasheet` element containing `manufacturer_part_number`,
+`datasheet_pdf_urls`, and optional `description`. The description comes from the
+registry's `ai_description` field. Missing PDF URLs become an empty array; missing
+or null descriptions are omitted. No adapter or shared props interface change is required.
 
 The supplier class orchestrates import and enrichment. Focused modules handle
 registry HTTP/schema/caching, conversion to Circuit JSON, and pure pin matching.
@@ -50,7 +53,9 @@ checks. A known manufacturer identity mismatch rejects.
 Standalone `fetchDatasheetInformation` and `createDatasheetInformationLoader`
 remain available when only a registry record is needed. Their standard result
 contains datasheet Circuit JSON and optional PDF URLs, footprinter string and
-TSX source text. Descriptions remain in the API's pin framework. Physical pins
+TSX source text. The same `source_datasheet` element is included in their Circuit
+JSON and preserved by reconciliation. Repeated enrichment replaces the record for
+the same manufacturer part number instead of appending duplicates. Physical pins
 without known electrical attributes stay represented in the datasheet array;
 matching an empty pin does not imply complete attributes.
 
@@ -112,3 +117,4 @@ support both manufacturer numbering and the published board's numbering.
 Live cache checks verify the 60-second Cache-Control policy and ETag/304.
 Cloudflare currently reports DYNAMIC, so these checks do not demonstrate an
 edge-cache hit. The parts-engine's own bounded cache is covered separately.
+

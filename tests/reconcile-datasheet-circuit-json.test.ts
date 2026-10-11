@@ -73,7 +73,7 @@ test("BGA hints map attributes without geometry mutation and report absent, empt
     source_port_id: "p1",
     pin_number: 1,
     requires_power: true,
-    requires_voltage: "1.8V",
+    requires_voltage: 1.8,
   })
   expect(result.circuitJson[2]).toEqual(input[2]!)
   expect(result.circuitJson[4]).toEqual(input[4]!)
@@ -107,7 +107,7 @@ test("existing attribute priority preserves explicit false and voltage overrides
   })
   expect(result.circuitJson[1]).toMatchObject({
     requires_power: false,
-    requires_voltage: "1.8V",
+    requires_voltage: 1.8,
   })
 })
 

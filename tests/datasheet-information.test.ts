@@ -66,7 +66,7 @@ test("datasheet lookup works independently of any supplier engine", async () => 
     result!.circuitJson.find((e) => e.type === "source_port"),
   ).toMatchObject({
     pin_number: 3,
-    provides_voltage: "2.8V",
+    provides_voltage: 2.8,
     provides_power: true,
   })
   for (const element of result!.circuitJson)
@@ -94,12 +94,12 @@ test("concurrent normalized lookups share a request but not mutable returned att
   expect(
     results[1]!.circuitJson.find((e) => e.type === "source_port")!
       .provides_voltage,
-  ).toBe("2.8V")
+  ).toBe(2.8)
   expect(
     (await engine({
       manufacturerPartNumber: "REG-2V8",
     }))!.circuitJson.find((e) => e.type === "source_port")!.provides_voltage,
-  ).toBe("2.8V")
+  ).toBe(2.8)
 })
 
 test("missing, failed, malformed and mismatched datasheets do not poison later requests", async () => {
@@ -126,7 +126,7 @@ test("missing, failed, malformed and mismatched datasheets do not poison later r
   await expect(load()).rejects.toThrow("different chip")
   expect(
     (await load())?.circuitJson.find((e) => e.type === "source_port"),
-  ).toMatchObject({ provides_voltage: "2.8V" })
+  ).toMatchObject({ provides_voltage: 2.8 })
   expect(platformFetch).toHaveBeenCalledTimes(5)
 })
 

@@ -5,7 +5,8 @@ export const storedDatasheetResponseSchema = z.object({
   datasheet: z.object({
     datasheet_id: z.string().uuid(),
     chip_name: z.string(),
-    datasheet_pdf_urls: z.array(z.string()).nullish(),
+    datasheet_pdf_urls: z.array(z.string().url()).nullish(),
+    ai_description: z.string().nullish(),
     pin_information: z
       .array(
         z.object({

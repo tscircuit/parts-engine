@@ -1,3 +1,4 @@
+import { source_datasheet } from "circuit-json"
 import { storedDatasheetResponseSchema } from "./stored-datasheet-response-schema"
 import { withDatasheetRequestTimeout } from "./with-datasheet-request-timeout"
 import { convertDatasheetToCircuitJson } from "./convert-datasheet-to-circuit-json"
@@ -79,6 +80,17 @@ export const createDatasheetInformationLoader = (
           pinInformation: datasheet.pin_information,
           pinAttributes: datasheet.pin_attributes,
         })
+        circuitJson.push(
+          source_datasheet.parse({
+            type: "source_datasheet",
+            source_datasheet_id: `source_datasheet:${datasheet.datasheet_id}`,
+            manufacturer_part_number: datasheet.chip_name,
+            datasheet_pdf_urls: datasheet.datasheet_pdf_urls ?? [],
+            ...(datasheet.ai_description != null
+              ? { description: datasheet.ai_description }
+              : {}),
+          }),
+        )
         const cacheControl = response.headers.get("cache-control") ?? ""
         const maxAge = /(?:^|,)\s*max-age\s*=\s*(\d+)/i.exec(cacheControl)
         const age = Number(response.headers.get("age") ?? 0)

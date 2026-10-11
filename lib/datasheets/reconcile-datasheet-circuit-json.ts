@@ -3,6 +3,7 @@ import {
   type AnyCircuitElement,
   type SourcePinAttributes,
   type SourcePort,
+  type SourceDatasheet,
 } from "circuit-json"
 
 export type DatasheetReconciliation = {
@@ -169,5 +170,25 @@ export const reconcileDatasheetCircuitJson = ({
   result.unmatchedDatasheetSourcePortIds = datasheetPorts
     .filter((port) => !used.has(port.source_port_id))
     .map((port) => port.source_port_id)
+  const sourceDatasheets = datasheetCircuitJson.filter(
+    (element): element is SourceDatasheet =>
+      element.type === "source_datasheet" &&
+      !!manufacturerPartNumber &&
+      normalizeManufacturerPartNumber(element.manufacturer_part_number) ===
+        normalizeManufacturerPartNumber(manufacturerPartNumber),
+  )
+  for (const sourceDatasheet of sourceDatasheets) {
+    const existingIndex = result.circuitJson.findIndex(
+      (element) =>
+        element.type === "source_datasheet" &&
+        normalizeManufacturerPartNumber(element.manufacturer_part_number) ===
+          normalizeManufacturerPartNumber(
+            sourceDatasheet.manufacturer_part_number,
+          ),
+    )
+    const copiedDatasheet = structuredClone(sourceDatasheet)
+    if (existingIndex === -1) result.circuitJson.push(copiedDatasheet)
+    else result.circuitJson[existingIndex] = copiedDatasheet
+  }
   return result
 }

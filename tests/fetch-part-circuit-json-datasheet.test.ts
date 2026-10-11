@@ -9,6 +9,8 @@ import rawPart from "./fixtures/C11337.raweasy.json"
 const datasheet = {
   datasheet_id: "9bb0a071-58c6-42e8-a961-ef7599d141bc",
   chip_name: "TLV70033DDCR",
+  datasheet_pdf_urls: ["https://www.ti.com/lit/ds/symlink/tlv700.pdf"],
+  ai_description: "Low-dropout voltage regulator.",
   pin_attributes: {
     pin1: { requiresPower: true, requiresVoltage: "5V", mustBeConnected: true },
     pin2: { requiresGround: true, providesVoltage: 0 },
@@ -63,11 +65,22 @@ test("fetchPartCircuitJson includes electrical attributes on canonical source po
     supplierPartNumber: "C11337",
   })
   const ports = result!.filter((element) => element.type === "source_port")
+  expect(
+    result!.filter((element) => element.type === "source_datasheet"),
+  ).toEqual([
+    {
+      type: "source_datasheet",
+      source_datasheet_id: `source_datasheet:${datasheet.datasheet_id}`,
+      manufacturer_part_number: datasheet.chip_name,
+      datasheet_pdf_urls: datasheet.datasheet_pdf_urls,
+      description: datasheet.ai_description,
+    },
+  ])
   const byNumber = (pinNumber: number) =>
     ports.find((port) => port.pin_number === pinNumber)!
   expect(byNumber(1)).toMatchObject({
     requires_power: true,
-    requires_voltage: "5V",
+    requires_voltage: 5,
     must_be_connected: true,
   })
   expect(byNumber(2)).toMatchObject({
@@ -83,7 +96,7 @@ test("fetchPartCircuitJson includes electrical attributes on canonical source po
   expect(byNumber(4).do_not_connect).toBe(true)
   expect(byNumber(5)).toMatchObject({
     provides_power: true,
-    provides_voltage: "3.3V",
+    provides_voltage: 3.3,
   })
   for (const port of ports) expect(source_port.parse(port)).toEqual(port)
   expect(
@@ -96,12 +109,16 @@ test("fetchPartCircuitJson includes electrical attributes on canonical source po
   expect(
     result!.filter(
       (element) =>
-        element.type !== "source_component" && element.type !== "source_port",
+        element.type !== "source_component" &&
+        element.type !== "source_port" &&
+        element.type !== "source_datasheet",
     ),
   ).toEqual(
     plain!.filter(
       (element) =>
-        element.type !== "source_component" && element.type !== "source_port",
+        element.type !== "source_component" &&
+        element.type !== "source_port" &&
+        element.type !== "source_datasheet",
     ),
   )
   expect(
@@ -127,7 +144,7 @@ test("per-call opt-in uses the override fetch and reuses cached datasheet result
       result!.find(
         (element) => element.type === "source_port" && element.pin_number === 5,
       ),
-    ).toMatchObject({ provides_voltage: "3.3V" })
+    ).toMatchObject({ provides_voltage: 3.3 })
   }
   expect(defaultFetch).not.toHaveBeenCalled()
   expect(
@@ -280,7 +297,7 @@ test("exact manufacturer searches return enriched Circuit JSON", async () => {
     result!.find(
       (element) => element.type === "source_port" && element.pin_number === 5,
     ),
-  ).toMatchObject({ provides_voltage: "3.3V" })
+  ).toMatchObject({ provides_voltage: 3.3 })
 })
 
 test("props label keys enrich shared pins and physical keys override label attributes", () => {
@@ -338,11 +355,11 @@ test("props label keys enrich shared pins and physical keys override label attri
   }).circuitJson
   expect(result[1]).toMatchObject({
     requires_power: true,
-    requires_voltage: "3.3V",
+    requires_voltage: 3.3,
   })
   expect(result[2]).toMatchObject({
     requires_power: true,
-    requires_voltage: "1.8V",
+    requires_voltage: 1.8,
   })
   expect(result[3]).toMatchObject({
     must_be_connected: false,
@@ -372,7 +389,7 @@ test("fetchPartCircuitJson accepts props label-keyed attributes from the API", a
     result!.find(
       (element) => element.type === "source_port" && element.pin_number === 5,
     ),
-  ).toMatchObject({ provides_power: true, provides_voltage: "3.3V" })
+  ).toMatchObject({ provides_power: true, provides_voltage: 3.3 })
   expect(
     result!.find(
       (element) => element.type === "source_port" && element.pin_number === 2,
@@ -413,7 +430,7 @@ test("datasheet enrichment bypasses the EasyEDA proxy and uses its configured re
   })
   expect(
     result!.find((e) => e.type === "source_port" && e.pin_number === 5),
-  ).toMatchObject({ provides_voltage: "3.3V" })
+  ).toMatchObject({ provides_voltage: 3.3 })
   expect(
     platformFetch.mock.calls.filter(([input]) => String(input) === registryUrl),
   ).toHaveLength(1)
