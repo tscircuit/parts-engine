@@ -1,5 +1,5 @@
 import type { PinAttributeMap } from "@tscircuit/props"
-import type { SourcePinAttributes } from "circuit-json"
+import { source_pin_attributes, type SourcePinAttributes } from "circuit-json"
 
 /** Match core's applyPinAttributesToSourcePort using canonical Circuit JSON fields. */
 export const toSourcePinAttributes = (
@@ -23,8 +23,12 @@ export const toSourcePinAttributes = (
     requires_power: attributes.requiresPower,
     provides_ground: attributes.providesGround,
     requires_ground: attributes.requiresGround,
-    provides_voltage: attributes.providesVoltage,
-    requires_voltage: attributes.requiresVoltage,
+    provides_voltage: source_pin_attributes.shape.provides_voltage.parse(
+      attributes.providesVoltage,
+    ),
+    requires_voltage: source_pin_attributes.shape.requires_voltage.parse(
+      attributes.requiresVoltage,
+    ),
     do_not_connect: attributes.doNotConnect,
     include_in_board_pinout: attributes.includeInBoardPinout,
     can_use_internal_pullup: attributes.canUseInternalPullup,
