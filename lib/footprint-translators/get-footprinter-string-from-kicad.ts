@@ -13,7 +13,7 @@ export const getFootprinterStringFromKicad = (
   // kicad:Package_SO:SOIC-8_3.9x4.9mm_P1.27mm -> SOIC-8
   // kicad:Package_TO_SOT_SMD:SOT-23 -> SOT-23
   match = kicadFootprint.match(
-    /:(SOIC-\d+|SOT-\d+|SOD-\d+|SSOP-\d+|TSSOP-\d+|QFP-\d+|QFN-\d+)/,
+    /:(SOIC-\d+|SOT-\d+(?:-\d+)?|SOD-\d+|SSOP-\d+|TSSOP-\d+|QFP-\d+|QFN-\d+)/,
   )
   if (match) return match[1]
 
