@@ -20,6 +20,7 @@ describe("jlcPartsEngine", () => {
       fetchedUrls.push(url)
       if (url.includes("/resistors/")) {
         return {
+          ok: true,
           json: async () => ({
             resistors: [{ lcsc: "1234" }, { lcsc: "5678" }, { lcsc: "9012" }],
           }),
@@ -27,6 +28,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/capacitors/")) {
         return {
+          ok: true,
           json: async () => ({
             capacitors: [{ lcsc: "2345" }, { lcsc: "6789" }, { lcsc: "0123" }],
           }),
@@ -34,6 +36,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/potentiometers/")) {
         return {
+          ok: true,
           json: async () => ({
             potentiometers: [
               { lcsc: "1234" },
@@ -45,6 +48,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/headers/")) {
         return {
+          ok: true,
           json: async () => ({
             headers: [{ lcsc: "3456" }, { lcsc: "7890" }, { lcsc: "1234" }],
           }),
@@ -52,6 +56,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/diodes/")) {
         return {
+          ok: true,
           json: async () => ({
             diodes: [{ lcsc: "4567" }, { lcsc: "8901" }, { lcsc: "2345" }],
           }),
@@ -73,6 +78,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/chips/")) {
         return {
+          ok: true,
           json: async () => ({
             chips: [{ lcsc: "5678" }, { lcsc: "9012" }, { lcsc: "3456" }],
           }),
@@ -80,6 +86,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/transistors/")) {
         return {
+          ok: true,
           json: async () => ({
             transistors: [{ lcsc: "6789" }, { lcsc: "0123" }, { lcsc: "4567" }],
           }),
@@ -87,6 +94,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/power_sources/")) {
         return {
+          ok: true,
           json: async () => ({
             power_sources: [
               { lcsc: "7890" },
@@ -98,6 +106,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/inductors/")) {
         return {
+          ok: true,
           json: async () => ({
             inductors: [{ lcsc: "8901" }, { lcsc: "2345" }, { lcsc: "6789" }],
           }),
@@ -105,6 +114,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/crystals/")) {
         return {
+          ok: true,
           json: async () => ({
             crystals: [{ lcsc: "9012" }, { lcsc: "3456" }, { lcsc: "7890" }],
           }),
@@ -112,6 +122,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/mosfets/")) {
         return {
+          ok: true,
           json: async () => ({
             mosfets: [{ lcsc: "0123" }, { lcsc: "4567" }, { lcsc: "8901" }],
           }),
@@ -119,6 +130,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/resonators/")) {
         return {
+          ok: true,
           json: async () => ({
             resonators: [{ lcsc: "1234" }, { lcsc: "5678" }, { lcsc: "9012" }],
           }),
@@ -132,6 +144,7 @@ describe("jlcPartsEngine", () => {
           { lcsc: "0123", switch_type: "Tactile Switches" },
         ]
         return {
+          ok: true,
           json: async () => ({
             switches: requestedSwitchType
               ? switchCandidates.filter(
@@ -144,6 +157,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/usb_c_connectors/")) {
         return {
+          ok: true,
           json: async () => ({
             usb_c_connectors: [
               { lcsc: "165948" },
@@ -155,6 +169,7 @@ describe("jlcPartsEngine", () => {
       }
       if (url.includes("/jst_connectors/")) {
         return {
+          ok: true,
           json: async () => ({
             jst_connectors: [
               {
@@ -646,6 +661,7 @@ describe("jlcPartsEngine", () => {
 
   test("should handle missing API data", async () => {
     globalThis.fetch = (async () => ({
+      ok: true,
       json: async () => ({}),
     })) as unknown as typeof fetch
 
@@ -670,6 +686,7 @@ describe("jlcPartsEngine", () => {
     globalThis.fetch = (async (url: string) => {
       if (url.includes("/resistors/")) {
         return {
+          ok: true,
           json: async () => ({
             resistors: [
               { lcsc: "1111" }, // is_basic is undefined, treated as false
