@@ -1,34 +1,54 @@
+import { getPartsEngineUrl } from "../get-parts-engine-url"
+import type { JlcPcbPartsEngineOptions } from "./types"
+
 export const cache = new Map<string, any>()
 
-export const getJlcPartsCached = async (name: any, params: any) => {
-  const paramString = new URLSearchParams({
-    ...params,
-    json: "true",
-  }).toString()
+export const createJlcPartsFetcher =
+  (
+    options: Pick<
+      JlcPcbPartsEngineOptions,
+      "jlcSearchBaseUrl" | "platformFetch"
+    > = {},
+  ) =>
+  async (name: string, params: Record<string, unknown>) => {
+    const paramString = new URLSearchParams(
+      Object.entries({ ...params, json: "true" }).map(
+        ([name, constraint]): [string, string] => [name, String(constraint)],
+      ),
+    ).toString()
+    const url = getPartsEngineUrl({
+      path: `${name}/list?${paramString}`,
+      baseUrl: options.jlcSearchBaseUrl,
+      environmentVariable: "TSCIRCUIT_JLCSEARCH_BASE_URL",
+      defaultBaseUrl: "https://jlcsearch.tscircuit.com",
+    })
+    const cacheKey = url.toString()
 
-  if (cache.has(paramString)) {
-    return cache.get(paramString)
-  }
-
-  const requestPromise = (async () => {
-    const response = await fetch(
-      `https://jlcsearch.tscircuit.com/${name}/list?${paramString}`,
-    )
-    return response.json()
-  })()
-  cache.set(paramString, requestPromise)
-
-  try {
-    const responseJson = await requestPromise
-    cache.set(paramString, responseJson)
-    return responseJson
-  } catch (error) {
-    if (cache.get(paramString) === requestPromise) {
-      cache.delete(paramString)
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey)
     }
-    throw error
+
+    const requestPromise = (async () => {
+      const response = await (options.platformFetch ?? globalThis.fetch)(
+        cacheKey,
+      )
+      return response.json()
+    })()
+    cache.set(cacheKey, requestPromise)
+
+    try {
+      const responseJson = await requestPromise
+      cache.set(cacheKey, responseJson)
+      return responseJson
+    } catch (error) {
+      if (cache.get(cacheKey) === requestPromise) {
+        cache.delete(cacheKey)
+      }
+      throw error
+    }
   }
-}
+
+export const getJlcPartsCached = createJlcPartsFetcher()
 
 export const withBasicPartPreference = (parts: any[] | undefined) => {
   if (!parts) return []

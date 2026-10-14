@@ -154,6 +154,39 @@ test("per-call opt-in uses the override fetch and reuses cached datasheet result
   ).toHaveLength(1)
 })
 
+test("manufacturer lookup uses the configured base URL and per-call fetch", async () => {
+  const defaultFetch = mock<PlatformFetch>(async () => {
+    throw new Error("Wrong fetch")
+  })
+  const easyEdaFetch = fixtureFetch()
+  const lookupUrl =
+    "https://baked.example/jlcsearch/components/list?search=TLV70033DDCR&json=true"
+  const platformFetch = mock<PlatformFetch>(async (input, init) => {
+    if (String(input) === lookupUrl) {
+      return Response.json({
+        components: [{ mfr: "TLV70033DDCR", lcsc: 11337 }],
+      })
+    }
+    return easyEdaFetch(input, init)
+  })
+  const engine = new JlcPcbPartsEngine({
+    jlcSearchBaseUrl: "https://baked.example/jlcsearch",
+    platformFetch: defaultFetch,
+  })
+  const result = await engine.fetchPartCircuitJson({
+    manufacturerPartNumber: "TLV70033DDCR",
+    includeDatasheetInformation: true,
+    platformFetch,
+  })
+  expect(platformFetch.mock.calls[0]?.[0]).toBe(lookupUrl)
+  expect(defaultFetch).not.toHaveBeenCalled()
+  expect(
+    result!.find(
+      (element) => element.type === "source_port" && element.pin_number === 5,
+    ),
+  ).toMatchObject({ provides_voltage: 3.3 })
+})
+
 test("disabled and missing datasheet paths preserve the original Circuit JSON", async () => {
   const platformFetch = fixtureFetch(() => new Response(null, { status: 404 }))
   const engine = new JlcPcbPartsEngine({ platformFetch })
@@ -203,7 +236,7 @@ test("a mismatched imported voltage variant is never enriched with the requested
 
 test("enriched manufacturer lookup requires an exact match instead of a fuzzy voltage variant", async () => {
   cache.set(
-    new URLSearchParams({ search: "TLV70028DDCR", json: "true" }).toString(),
+    `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: "TLV70028DDCR", json: "true" })}`,
     { components: [{ mfr: "TLV70018DDCR", lcsc: 11337 }] },
   )
   const platformFetch = fixtureFetch()
@@ -283,7 +316,7 @@ test("enrichment uses physical pins, preserves omitted values, and does not muta
 
 test("exact manufacturer searches return enriched Circuit JSON", async () => {
   cache.set(
-    new URLSearchParams({ search: "TLV70033DDCR", json: "true" }).toString(),
+    `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: "TLV70033DDCR", json: "true" })}`,
     {
       components: [{ mfr: "TLV70033DDCR", lcsc: 11337 }],
     },

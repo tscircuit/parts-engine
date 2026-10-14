@@ -54,7 +54,7 @@ test("fetchPartCircuitJson returns circuit json for USB-C connector (C165948)", 
 
 test("fetchPartCircuitJson works with manufacturerPartNumber (TYPE-C-31-M-12)", async () => {
   cache.set(
-    new URLSearchParams({ search: "TYPE-C-31-M-12", json: "true" }).toString(),
+    `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: "TYPE-C-31-M-12", json: "true" })}`,
     {
       components: [
         { mfr: "TYPE-C-OTHER", lcsc: 1 },

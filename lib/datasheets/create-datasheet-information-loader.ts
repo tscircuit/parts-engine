@@ -3,6 +3,7 @@ import { storedDatasheetResponseSchema } from "./stored-datasheet-response-schem
 import { withDatasheetRequestTimeout } from "./with-datasheet-request-timeout"
 import { convertDatasheetToCircuitJson } from "./convert-datasheet-to-circuit-json"
 import type { PlatformFetch } from "../platform-fetch"
+import { getPartsEngineUrl } from "../get-parts-engine-url"
 import type {
   DatasheetInformation,
   DatasheetInformationOptions,
@@ -31,23 +32,26 @@ export const createDatasheetInformationLoader = (
   > => {
     const chipName = normalizeChipName(manufacturerPartNumber)
     if (!/[a-z0-9]/.test(chipName)) return undefined
+    const url = getPartsEngineUrl({
+      path: "datasheets/get",
+      baseUrl: options.datasheetApiBaseUrl,
+      environmentVariable: "TSCIRCUIT_DATASHEET_API_BASE_URL",
+      defaultBaseUrl: "https://api.tscircuit.com",
+    })
+    url.searchParams.set("chip_name", chipName)
+    const cacheKey = url.toString()
     const fetcher = platformFetch ?? options.platformFetch ?? globalThis.fetch
     let cache = caches.get(fetcher)
     if (!cache) {
       cache = new Map()
       caches.set(fetcher, cache)
     }
-    const cached = cache.get(chipName)
+    const cached = cache.get(cacheKey)
     if (cached && cached.expiresAt > Date.now()) {
       return structuredClone(await cached.result)
     }
-    cache.delete(chipName)
+    cache.delete(cacheKey)
     if (cache.size >= 256) cache.delete(cache.keys().next().value!)
-    const url = new URL(
-      "/datasheets/get",
-      options.datasheetApiBaseUrl ?? "https://api.tscircuit.com",
-    )
-    url.searchParams.set("chip_name", chipName)
     const entry: CacheEntry = {
       expiresAt: Infinity,
       result: Promise.resolve(undefined),
@@ -116,11 +120,11 @@ export const createDatasheetInformationLoader = (
         // Do not cache misses, errors or invalid responses. Do not delete a newer
         // entry if this pending request was evicted to keep the cache bounded.
         if (entry.expiresAt === Infinity || entry.expiresAt <= Date.now()) {
-          if (cache.get(chipName) === entry) cache.delete(chipName)
+          if (cache.get(cacheKey) === entry) cache.delete(cacheKey)
         }
       }
     })
-    cache.set(chipName, entry)
+    cache.set(cacheKey, entry)
     return structuredClone(await entry.result)
   }
 }

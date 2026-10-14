@@ -10,6 +10,7 @@ export type EasyEdaProxyConfig = {
 
 export type JlcPcbPartsEngineOptions = {
   platformFetch?: PlatformFetch
+  jlcSearchBaseUrl?: string
   easyEdaProxyConfig?: EasyEdaProxyConfig
   /** Include registry pin attributes in imported source ports. Defaults to false. */
   includeDatasheetInformation?: boolean

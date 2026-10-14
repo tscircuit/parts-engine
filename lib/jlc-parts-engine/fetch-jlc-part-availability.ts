@@ -3,6 +3,7 @@ import type {
   PartAvailability,
 } from "@tscircuit/props"
 import { z } from "zod"
+import { getPartsEngineUrl } from "../get-parts-engine-url"
 
 const jlcSearchResponse = z.object({
   components: z.array(
@@ -65,12 +66,15 @@ const normalizeJlcPartNumber = (supplierPartNumber: string): string | null => {
   return Number.isSafeInteger(lcsc) && lcsc > 0 ? `C${lcsc}` : null
 }
 
-export const fetchJlcPartAvailability = async ({
-  supplierName,
-  supplierPartNumber,
-  platformFetch = globalThis.fetch,
-  signal,
-}: FetchPartAvailabilityParams): Promise<PartAvailability | undefined> => {
+export const fetchJlcPartAvailability = async (
+  {
+    supplierName,
+    supplierPartNumber,
+    platformFetch = globalThis.fetch,
+    signal,
+  }: FetchPartAvailabilityParams,
+  options: { jlcSearchBaseUrl?: string } = {},
+): Promise<PartAvailability | undefined> => {
   if (supplierName !== "jlcpcb") return undefined
   const checkedAt = new Date().toISOString()
   const unknownAvailability: PartAvailability = {
@@ -88,10 +92,13 @@ export const fetchJlcPartAvailability = async ({
     cache: "no-store",
     signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
   }
-  const response = await platformFetch(
-    `https://jlcsearch.tscircuit.com/api/search?q=${encodeURIComponent(partNumber)}&limit=1`,
-    requestOptions,
-  )
+  const url = getPartsEngineUrl({
+    path: `api/search?q=${encodeURIComponent(partNumber)}&limit=1`,
+    baseUrl: options.jlcSearchBaseUrl,
+    environmentVariable: "TSCIRCUIT_JLCSEARCH_BASE_URL",
+    defaultBaseUrl: "https://jlcsearch.tscircuit.com",
+  })
+  const response = await platformFetch(url.toString(), requestOptions)
   if (!response.ok) throw new Error("JLC availability lookup failed")
   const catalog = jlcSearchResponse.safeParse(await response.json())
   if (!catalog.success) return unknownAvailability
