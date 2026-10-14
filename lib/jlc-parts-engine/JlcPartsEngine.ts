@@ -17,7 +17,10 @@ import {
   isCompatiblePcbMountJstConnector,
 } from "./get-jst-connector-search-config"
 import { getPinHeaderSearchParams } from "./get-pin-header-search-params"
-import { getJlcPartsCached, withBasicPartPreference } from "./jlc-parts-cache"
+import {
+  createJlcPartsFetcher,
+  withBasicPartPreference,
+} from "./jlc-parts-cache"
 import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
 
 const normalizePartNumber = (partNumber: unknown) =>
@@ -26,6 +29,8 @@ const normalizePartNumber = (partNumber: unknown) =>
 export class JlcPcbPartsEngine implements PartsEngine {
   private readonly defaultPlatformFetch: JlcPcbPartsEngineOptions["platformFetch"]
   private readonly easyEdaProxyConfig: JlcPcbPartsEngineOptions["easyEdaProxyConfig"]
+  private readonly jlcSearchBaseUrl: string | undefined
+  private readonly getJlcPartsCached: ReturnType<typeof createJlcPartsFetcher>
 
   private readonly includeDatasheetInformation: boolean
   private readonly fetchDatasheetInformation: FetchDatasheetInformation
@@ -33,11 +38,17 @@ export class JlcPcbPartsEngine implements PartsEngine {
   constructor({
     platformFetch: defaultPlatformFetch,
     easyEdaProxyConfig,
+    jlcSearchBaseUrl,
     includeDatasheetInformation = false,
     datasheetApiBaseUrl,
   }: JlcPcbPartsEngineOptions = {}) {
     this.defaultPlatformFetch = defaultPlatformFetch
     this.easyEdaProxyConfig = easyEdaProxyConfig
+    this.jlcSearchBaseUrl = jlcSearchBaseUrl
+    this.getJlcPartsCached = createJlcPartsFetcher({
+      platformFetch: defaultPlatformFetch,
+      jlcSearchBaseUrl,
+    })
     this.includeDatasheetInformation = includeDatasheetInformation
     this.fetchDatasheetInformation = createDatasheetInformationLoader({
       platformFetch: defaultPlatformFetch,
@@ -45,14 +56,20 @@ export class JlcPcbPartsEngine implements PartsEngine {
     })
     this.fetchPartCircuitJson = this.fetchPartCircuitJson.bind(this)
     this.fetchPartAvailability = this.fetchPartAvailability.bind(this)
+    this.findPart = this.findPart.bind(this)
   }
 
   async fetchPartAvailability(request: FetchPartAvailabilityParams) {
-    return fetchJlcPartAvailability({
-      ...request,
-      platformFetch:
-        request.platformFetch ?? this.defaultPlatformFetch ?? globalThis.fetch,
-    })
+    return fetchJlcPartAvailability(
+      {
+        ...request,
+        platformFetch:
+          request.platformFetch ??
+          this.defaultPlatformFetch ??
+          globalThis.fetch,
+      },
+      { jlcSearchBaseUrl: this.jlcSearchBaseUrl },
+    )
   }
 
   private getEasyEdaPlatformFetch(
@@ -81,7 +98,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_resistor"
     ) {
-      const { resistors } = await getJlcPartsCached("resistors", {
+      const { resistors } = await this.getJlcPartsCached("resistors", {
         resistance: sourceComponent.resistance,
         package: jlcpcbPackage,
       })
@@ -95,7 +112,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_capacitor"
     ) {
-      const { capacitors } = await getJlcPartsCached("capacitors", {
+      const { capacitors } = await this.getJlcPartsCached("capacitors", {
         capacitance: sourceComponent.capacitance,
         package: jlcpcbPackage,
       })
@@ -109,7 +126,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_pin_header"
     ) {
-      const { headers } = await getJlcPartsCached(
+      const { headers } = await this.getJlcPartsCached(
         "headers",
         getPinHeaderSearchParams(sourceComponent, footprinterString),
       )
@@ -122,10 +139,13 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_potentiometer"
     ) {
-      const { potentiometers } = await getJlcPartsCached("potentiometers", {
-        resistance: sourceComponent.max_resistance,
-        package: jlcpcbPackage,
-      })
+      const { potentiometers } = await this.getJlcPartsCached(
+        "potentiometers",
+        {
+          resistance: sourceComponent.max_resistance,
+          package: jlcpcbPackage,
+        },
+      )
       return {
         jlcpcb: withBasicPartPreference(potentiometers)
           .map((p: any) => `C${p.lcsc}`)
@@ -135,7 +155,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_diode"
     ) {
-      const { diodes } = await getJlcPartsCached("diodes", {
+      const { diodes } = await this.getJlcPartsCached("diodes", {
         package: jlcpcbPackage,
       })
       return {
@@ -150,7 +170,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       if (!jlcpcbPackage || !footprinterString) {
         return {}
       }
-      const { chips } = await getJlcPartsCached("chips", {
+      const { chips } = await this.getJlcPartsCached("chips", {
         package: jlcpcbPackage,
       })
       return {
@@ -162,7 +182,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_transistor"
     ) {
-      const { transistors } = await getJlcPartsCached("transistors", {
+      const { transistors } = await this.getJlcPartsCached("transistors", {
         package: jlcpcbPackage,
         transistor_type: sourceComponent.transistor_type,
       })
@@ -175,7 +195,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_power_source"
     ) {
-      const { power_sources } = await getJlcPartsCached("power_sources", {
+      const { power_sources } = await this.getJlcPartsCached("power_sources", {
         voltage: sourceComponent.voltage,
         package: jlcpcbPackage,
       })
@@ -188,7 +208,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_inductor"
     ) {
-      const { inductors } = await getJlcPartsCached("inductors", {
+      const { inductors } = await this.getJlcPartsCached("inductors", {
         inductance: sourceComponent.inductance,
         package: jlcpcbPackage,
       })
@@ -201,7 +221,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_crystal"
     ) {
-      const { crystals } = await getJlcPartsCached("crystals", {
+      const { crystals } = await this.getJlcPartsCached("crystals", {
         frequency: sourceComponent.frequency,
         load_capacitance: sourceComponent.load_capacitance,
         package: jlcpcbPackage,
@@ -215,7 +235,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_mosfet"
     ) {
-      const { mosfets } = await getJlcPartsCached("mosfets", {
+      const { mosfets } = await this.getJlcPartsCached("mosfets", {
         package: jlcpcbPackage,
         mosfet_mode: sourceComponent.mosfet_mode,
         channel_type: sourceComponent.channel_type,
@@ -229,7 +249,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_resonator"
     ) {
-      const { resonators } = await getJlcPartsCached("resonators", {
+      const { resonators } = await this.getJlcPartsCached("resonators", {
         frequency: sourceComponent.frequency,
         package: jlcpcbPackage,
       })
@@ -242,7 +262,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_switch"
     ) {
-      const { switches } = await getJlcPartsCached("switches", {
+      const { switches } = await this.getJlcPartsCached("switches", {
         package: jlcpcbPackage,
       })
       return {
@@ -254,7 +274,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_led"
     ) {
-      const { leds } = await getJlcPartsCached("leds", {
+      const { leds } = await this.getJlcPartsCached("leds", {
         package: jlcpcbPackage,
         color: sourceComponent.color,
       })
@@ -267,7 +287,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.type === "source_component" &&
       sourceComponent.ftype === "simple_fuse"
     ) {
-      const { fuses } = await getJlcPartsCached("fuses", {
+      const { fuses } = await this.getJlcPartsCached("fuses", {
         package: jlcpcbPackage,
       })
       return {
@@ -280,7 +300,7 @@ export class JlcPcbPartsEngine implements PartsEngine {
       sourceComponent.ftype === "simple_connector" &&
       sourceComponent.standard === "usb_c"
     ) {
-      const { usb_c_connectors } = await getJlcPartsCached(
+      const { usb_c_connectors } = await this.getJlcPartsCached(
         "usb_c_connectors",
         {},
       )
@@ -299,10 +319,13 @@ export class JlcPcbPartsEngine implements PartsEngine {
         return {}
       }
 
-      const { jst_connectors } = await getJlcPartsCached("jst_connectors", {
-        pitch_mm: searchConfig.pitchMm,
-        num_pins: sourceComponent.pin_count,
-      })
+      const { jst_connectors } = await this.getJlcPartsCached(
+        "jst_connectors",
+        {
+          pitch_mm: searchConfig.pitchMm,
+          num_pins: sourceComponent.pin_count,
+        },
+      )
       const compatiblePcbMountConnectors = jst_connectors?.filter(
         (connector: any) =>
           isCompatiblePcbMountJstConnector(
@@ -333,6 +356,12 @@ export class JlcPcbPartsEngine implements PartsEngine {
     let resolvedSupplierPartNumber = supplierPartNumber
 
     if (!resolvedSupplierPartNumber && manufacturerPartNumber) {
+      const getJlcPartsCached = platformFetchOverride
+        ? createJlcPartsFetcher({
+            platformFetch: platformFetchOverride,
+            jlcSearchBaseUrl: this.jlcSearchBaseUrl,
+          })
+        : this.getJlcPartsCached
       const { components } = await getJlcPartsCached("components", {
         search: manufacturerPartNumber,
       })

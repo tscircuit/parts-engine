@@ -1,9 +1,8 @@
 import type { PlatformFetch } from "../jlc-parts-engine/types"
 import type { DigiKeySearchPart } from "./types"
+import { getPartsEngineUrl } from "../get-parts-engine-url"
 
 export const digikeyCache = new Map<string, unknown>()
-
-const normalizeBaseUrl = (baseUrl: string): string => baseUrl.replace(/\/$/, "")
 
 export const getDigiKeyPartsCached = async (
   path: string,
@@ -14,10 +13,12 @@ export const getDigiKeyPartsCached = async (
   } = {},
 ): Promise<Record<string, DigiKeySearchPart[]>> => {
   const platformFetch = options.platformFetch ?? globalThis.fetch
-  const baseUrl = normalizeBaseUrl(
-    options.apiBaseUrl ?? "https://digikeysearch.tscircuit.com",
-  )
-  const url = new URL(path, `${baseUrl}/`)
+  const url = getPartsEngineUrl({
+    path,
+    baseUrl: options.apiBaseUrl,
+    environmentVariable: "TSCIRCUIT_DIGIKEY_BASE_URL",
+    defaultBaseUrl: "https://digikeysearch.tscircuit.com",
+  })
   for (const [name, value] of Object.entries(params)) {
     if (value !== undefined && value !== "") {
       url.searchParams.set(name, String(value))

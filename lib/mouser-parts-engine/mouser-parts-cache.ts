@@ -1,9 +1,8 @@
 import type { PlatformFetch } from "../jlc-parts-engine/types"
 import type { MouserSearchPart } from "./types"
+import { getPartsEngineUrl } from "../get-parts-engine-url"
 
 export const mouserCache = new Map<string, unknown>()
-
-const normalizeBaseUrl = (baseUrl: string): string => baseUrl.replace(/\/$/, "")
 
 export const getMouserPartsCached = async (
   path: string,
@@ -14,10 +13,12 @@ export const getMouserPartsCached = async (
   } = {},
 ): Promise<Record<string, MouserSearchPart[]>> => {
   const platformFetch = options.platformFetch ?? globalThis.fetch
-  const baseUrl = normalizeBaseUrl(
-    options.apiBaseUrl ?? "https://mousersearch.tscircuit.com",
-  )
-  const url = new URL(path, `${baseUrl}/`)
+  const url = getPartsEngineUrl({
+    path,
+    baseUrl: options.apiBaseUrl,
+    environmentVariable: "TSCIRCUIT_MOUSER_BASE_URL",
+    defaultBaseUrl: "https://mousersearch.tscircuit.com",
+  })
   for (const [name, value] of Object.entries(params)) {
     if (value !== undefined && value !== "") {
       url.searchParams.set(name, String(value))
