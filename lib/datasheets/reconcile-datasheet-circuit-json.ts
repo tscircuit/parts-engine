@@ -22,7 +22,7 @@ export type DatasheetReconciliation = {
 const physicalKey = (port: SourcePort) =>
   port.pin_number !== undefined
     ? `pin${port.pin_number}`
-    : /^pin(?:\d+|[A-Z]+\d+)$/.test(port.name)
+    : /^pin(?:\d+|[A-Z]+\d*)$/.test(port.name)
       ? port.name
       : undefined
 
@@ -37,7 +37,7 @@ const getSourcePinAttributes = (port: SourcePort): SourcePinAttributes => {
   return attributes
 }
 
-/** Pure reconciliation: never changes footprint geometry, IDs, or connectivity. */
+/** Reconcile electrical facts and internal connections without changing footprint geometry or IDs. */
 export const reconcileDatasheetCircuitJson = ({
   circuitJson,
   datasheetCircuitJson,
@@ -90,6 +90,7 @@ export const reconcileDatasheetCircuitJson = ({
     index.set(name, [...(index.get(name) ?? []), port])
   }
   const used = new Set<string>()
+  const importedIdsByDatasheetId = new Map<string, string[]>()
   const result: DatasheetReconciliation = {
     circuitJson: [],
     matchedSourcePortIds: [],
@@ -155,7 +156,12 @@ export const reconcileDatasheetCircuitJson = ({
       return element
     }
     Object.assign(attributes, physicalAttributes)
-    for (const port of candidates) used.add(port.source_port_id)
+    for (const port of candidates) {
+      used.add(port.source_port_id)
+      const ids = importedIdsByDatasheetId.get(port.source_port_id) ?? []
+      ids.push(element.source_port_id)
+      importedIdsByDatasheetId.set(port.source_port_id, ids)
+    }
     if (candidates.length)
       result.matchedSourcePortIds.push(element.source_port_id)
     else result.unmatchedSourcePortIds.push(element.source_port_id)
@@ -167,6 +173,28 @@ export const reconcileDatasheetCircuitJson = ({
       ? { ...element, ...attributes, ...getSourcePinAttributes(element) }
       : { ...element, ...attributes }
   })
+  const internalGroups =
+    datasheetComponents[0]!.internally_connected_source_port_ids
+  if (
+    internalGroups !== undefined &&
+    !(
+      attributePriority === "existing" &&
+      target.internally_connected_source_port_ids !== undefined
+    )
+  ) {
+    const groups = internalGroups.flatMap((group) => {
+      const mapped = group.map((id) => importedIdsByDatasheetId.get(id))
+      if (mapped.some((ids) => ids?.length !== 1)) return []
+      const ids = [...new Set(mapped.map((ids) => ids![0]!))]
+      return ids.length >= 2 ? [ids] : []
+    })
+    result.circuitJson = result.circuitJson.map((element) =>
+      element.type === "source_component" &&
+      element.source_component_id === target.source_component_id
+        ? { ...element, internally_connected_source_port_ids: groups }
+        : element,
+    )
+  }
   result.unmatchedDatasheetSourcePortIds = datasheetPorts
     .filter((port) => !used.has(port.source_port_id))
     .map((port) => port.source_port_id)

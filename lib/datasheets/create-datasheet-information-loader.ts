@@ -83,6 +83,7 @@ export const createDatasheetInformationLoader = (
           chipName: manufacturerPartNumber.trim(),
           pinInformation: datasheet.pin_information,
           pinAttributes: datasheet.pin_attributes,
+          internallyConnectedPins: datasheet.internally_connected_pins,
         })
         circuitJson.push(
           source_datasheet.parse({
