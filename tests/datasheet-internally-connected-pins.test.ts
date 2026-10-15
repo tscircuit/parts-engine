@@ -117,9 +117,9 @@ test("legacy, empty and invalid groups stay distinct and unresolved groups never
     const chip = data.circuitJson.find(
       (element) => element.type === "source_component",
     )!
-    expect(chip.internally_connected_source_port_ids).toEqual(
-      groups == null ? undefined : [],
-    )
+    if (groups == null)
+      expect(chip.internally_connected_source_port_ids).toBeUndefined()
+    else expect(chip.internally_connected_source_port_ids).toEqual([])
   }
   const load = createDatasheetInformationLoader({
     platformFetch: async () =>
