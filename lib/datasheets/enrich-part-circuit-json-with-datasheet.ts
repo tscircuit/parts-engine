@@ -3,7 +3,7 @@ import type { PlatformFetch } from "../platform-fetch"
 import { reconcileDatasheetCircuitJson } from "./reconcile-datasheet-circuit-json"
 import type { FetchDatasheetInformation } from "./types"
 
-/** Enrich supplier ports without replacing footprint geometry or connectivity. */
+/** Enrich supplier electrical facts and internal groups without replacing footprint geometry. */
 export async function enrichPartCircuitJsonWithDatasheet(
   {
     circuitJson,

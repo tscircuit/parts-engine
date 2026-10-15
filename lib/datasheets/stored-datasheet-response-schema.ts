@@ -17,6 +17,9 @@ export const storedDatasheetResponseSchema = z.object({
         }),
       )
       .nullish(),
+    internally_connected_pins: z
+      .array(z.array(z.union([z.string(), z.number()])))
+      .nullish(),
     pin_attributes: commonComponentProps.shape.pinAttributes.nullable(),
     footprinter_string: z.string().nullish(),
     generated_tsx: z.string().nullish(),

@@ -1,10 +1,11 @@
-import type { CommonComponentProps } from "@tscircuit/props"
+import type { ChipProps, CommonComponentProps } from "@tscircuit/props"
 import type { AnyCircuitElement, SourcePort } from "circuit-json"
 import { toSourcePinAttributes } from "./to-source-pin-attributes"
 
 export type StoredDatasheetPins = {
   chipName: string
   pinInformation?: { pin_number: string; name: string[] }[] | null
+  internallyConnectedPins?: ChipProps["internallyConnectedPins"] | null
   pinAttributes?: CommonComponentProps["pinAttributes"] | null
 }
 
@@ -15,6 +16,7 @@ export const convertDatasheetToCircuitJson = ({
   chipName,
   pinInformation,
   pinAttributes,
+  internallyConnectedPins,
 }: StoredDatasheetPins): AnyCircuitElement[] => {
   const sourceComponentId = `datasheet:${encodeURIComponent(chipName)}`
   const ports = new Map<string, SourcePort>()
@@ -57,6 +59,22 @@ export const convertDatasheetToCircuitJson = ({
       ...toSourcePinAttributes(attributes),
     })
   }
+  const resolvePort = (identifier: string | number) => {
+    const name = String(identifier)
+    const physical = ports.get(physicalPinKey(name))
+    if (physical) return physical
+    const matches = [...ports.values()].filter(
+      (port) => port.name === name || port.port_hints?.includes(name),
+    )
+    return matches.length === 1 ? matches[0] : undefined
+  }
+  const internalGroups = internallyConnectedPins?.flatMap((group) => {
+    const resolved = group.map(resolvePort)
+    // Never partially publish a group whose physical pin identities are unknown.
+    if (resolved.some((port) => !port)) return []
+    const ids = [...new Set(resolved.map((port) => port!.source_port_id))]
+    return ids.length >= 2 ? [ids] : []
+  })
   return [
     {
       type: "source_component",
@@ -64,6 +82,9 @@ export const convertDatasheetToCircuitJson = ({
       source_component_id: sourceComponentId,
       name: chipName,
       manufacturer_part_number: chipName,
+      ...(internalGroups !== undefined
+        ? { internally_connected_source_port_ids: internalGroups }
+        : {}),
     },
     ...ports.values(),
   ]
