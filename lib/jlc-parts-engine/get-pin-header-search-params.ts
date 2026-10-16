@@ -17,6 +17,42 @@ const parsePinHeaderPitchFromFootprinterString = (
   return match ? Number(match[1]) : undefined
 }
 
+export const getPinHeaderRowCount = (
+  sourceComponent: Record<string, unknown>,
+  footprinterString?: string,
+): number | undefined => {
+  if (footprinterString) {
+    const rowsMatch = footprinterString.match(/(?:^|_)rows(\d+)(?:_|$)/i)
+    if (rowsMatch) {
+      return Number(rowsMatch[1])
+    }
+    if (/^pinrow\d+(?:_|$)/i.test(footprinterString)) {
+      return 1
+    }
+  }
+
+  if (
+    typeof sourceComponent.num_rows === "number" &&
+    Number.isFinite(sourceComponent.num_rows)
+  ) {
+    return sourceComponent.num_rows
+  }
+  if (
+    typeof sourceComponent.row_count === "number" &&
+    Number.isFinite(sourceComponent.row_count)
+  ) {
+    return sourceComponent.row_count
+  }
+  if (
+    sourceComponent.double_row === true ||
+    sourceComponent.doubleRow === true
+  ) {
+    return 2
+  }
+
+  return undefined
+}
+
 const isKnownPinHeaderGender = (gender: unknown): gender is "male" | "female" =>
   gender === "male" || gender === "female"
 
