@@ -1,22 +1,25 @@
+import type { PartsEngine } from "@tscircuit/props"
+import type { FetchPartAvailabilityParams } from "@tscircuit/props"
+import {
+  EasyEdaJsonSchema,
+  convertEasyEdaJsonToCircuitJson,
+  fetchEasyEDAComponent,
+} from "easyeda/browser"
 import { createDatasheetInformationLoader } from "../datasheets/create-datasheet-information-loader"
 import { enrichPartCircuitJsonWithDatasheet } from "../datasheets/enrich-part-circuit-json-with-datasheet"
 import type { FetchDatasheetInformation } from "../datasheets/types"
-import type { FetchPartCircuitJsonParams } from "../parts-engine"
-import type { PartsEngine } from "@tscircuit/props"
-import type { FetchPartAvailabilityParams } from "@tscircuit/props"
-import { fetchJlcPartAvailability } from "./fetch-jlc-part-availability"
-import {
-  fetchEasyEDAComponent,
-  EasyEdaJsonSchema,
-  convertEasyEdaJsonToCircuitJson,
-} from "easyeda/browser"
 import { getJlcpcbPackageName } from "../footprint-translators/index"
-import { getFetchWithEasyEdaProxy } from "./getFetchWithEasyEdaProxy"
+import type { FetchPartCircuitJsonParams } from "../parts-engine"
+import { fetchJlcPartAvailability } from "./fetch-jlc-part-availability"
 import {
   getJstConnectorSearchConfig,
   isCompatiblePcbMountJstConnector,
 } from "./get-jst-connector-search-config"
-import { getPinHeaderSearchParams } from "./get-pin-header-search-params"
+import {
+  getPinHeaderRowCount,
+  getPinHeaderSearchParams,
+} from "./get-pin-header-search-params"
+import { getFetchWithEasyEdaProxy } from "./getFetchWithEasyEdaProxy"
 import {
   createJlcPartsFetcher,
   withBasicPartPreference,
@@ -130,8 +133,13 @@ export class JlcPcbPartsEngine implements PartsEngine {
         "headers",
         getPinHeaderSearchParams(sourceComponent, footprinterString),
       )
+      const rowCount = getPinHeaderRowCount(sourceComponent, footprinterString)
+      const compatibleHeaders = headers?.filter(
+        (header: { num_rows?: number }) =>
+          rowCount === undefined || header.num_rows === rowCount,
+      )
       return {
-        jlcpcb: withBasicPartPreference(headers)
+        jlcpcb: withBasicPartPreference(compatibleHeaders)
           .map((h: any) => `C${h.lcsc}`)
           .slice(0, 3),
       }
