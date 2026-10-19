@@ -7,6 +7,10 @@
   },
   "type": "module",
   "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./datasheet-component-tsx": "./dist/lib/datasheets/component-tsx.js"
+  },
   "files": [
     "dist"
   ],
@@ -22,7 +26,7 @@
   "scripts": {
     "format": "biome format --write .",
     "test": "bun test",
-    "build": "tsup index.ts --format esm --dts --sourcemap",
+    "build": "tsup index.ts lib/datasheets/component-tsx.ts --format esm --dts --sourcemap",
     "format:check": "biome format ."
   },
   "peerDependencies": {
