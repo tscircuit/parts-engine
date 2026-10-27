@@ -1,4 +1,5 @@
 import { getPartsEngineUrl } from "../get-parts-engine-url"
+import { getPartsEngineCacheKey } from "../get-parts-engine-cache-key"
 import type { JlcPcbPartsEngineOptions } from "./types"
 
 export const cache = new Map<string, any>()
@@ -22,7 +23,8 @@ export const createJlcPartsFetcher =
       environmentVariable: "TSCIRCUIT_JLCSEARCH_BASE_URL",
       defaultBaseUrl: "https://jlcsearch.tscircuit.com",
     })
-    const cacheKey = url.toString()
+    const requestUrl = url.toString()
+    const cacheKey = getPartsEngineCacheKey(requestUrl, options.platformFetch)
 
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey)
@@ -30,7 +32,7 @@ export const createJlcPartsFetcher =
 
     const requestPromise = (async () => {
       const response = await (options.platformFetch ?? globalThis.fetch)(
-        cacheKey,
+        requestUrl,
       )
       return response.json()
     })()
