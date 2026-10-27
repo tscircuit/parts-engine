@@ -25,9 +25,18 @@ const datasheet = {
   },
 }
 
-const fixtureFetch = (datasheetResponse = () => Response.json({ datasheet })) =>
+const fixtureFetch = (
+  datasheetResponse = () => Response.json({ datasheet }),
+  components?: Array<{ mfr: string; lcsc: number }>,
+) =>
   mock<PlatformFetch>(async (input) => {
     const url = String(input)
+    if (
+      components &&
+      url.startsWith("https://jlcsearch.tscircuit.com/components/list?")
+    ) {
+      return Response.json({ components })
+    }
     if (url.startsWith("https://api.tscircuit.com/datasheets/get?")) {
       expect(new URL(url).searchParams.get("chip_name")).toBe("tlv70033ddcr")
       return datasheetResponse()
@@ -235,11 +244,9 @@ test("a mismatched imported voltage variant is never enriched with the requested
 })
 
 test("enriched manufacturer lookup requires an exact match instead of a fuzzy voltage variant", async () => {
-  cache.set(
-    `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: "TLV70028DDCR", json: "true" })}`,
-    { components: [{ mfr: "TLV70018DDCR", lcsc: 11337 }] },
-  )
-  const platformFetch = fixtureFetch()
+  const platformFetch = fixtureFetch(undefined, [
+    { mfr: "TLV70018DDCR", lcsc: 11337 },
+  ])
   const engine = new JlcPcbPartsEngine({
     platformFetch,
     includeDatasheetInformation: true,
@@ -249,7 +256,10 @@ test("enriched manufacturer lookup requires an exact match instead of a fuzzy vo
       manufacturerPartNumber: "TLV70028DDCR",
     }),
   ).toBeUndefined()
-  expect(platformFetch).not.toHaveBeenCalled()
+  expect(platformFetch).toHaveBeenCalledTimes(1)
+  expect(new URL(String(platformFetch.mock.calls[0]![0])).pathname).toBe(
+    "/components/list",
+  )
 })
 
 test("enrichment uses physical pins, preserves omitted values, and does not mutate geometry", () => {
@@ -315,13 +325,11 @@ test("enrichment uses physical pins, preserves omitted values, and does not muta
 })
 
 test("exact manufacturer searches return enriched Circuit JSON", async () => {
-  cache.set(
-    `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: "TLV70033DDCR", json: "true" })}`,
-    {
-      components: [{ mfr: "TLV70033DDCR", lcsc: 11337 }],
-    },
-  )
-  const engine = new JlcPcbPartsEngine({ platformFetch: fixtureFetch() })
+  const engine = new JlcPcbPartsEngine({
+    platformFetch: fixtureFetch(undefined, [
+      { mfr: "TLV70033DDCR", lcsc: 11337 },
+    ]),
+  })
   const result = await engine.fetchPartCircuitJson({
     manufacturerPartNumber: "TLV70033DDCR",
     includeDatasheetInformation: true,

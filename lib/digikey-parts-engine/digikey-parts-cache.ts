@@ -1,6 +1,7 @@
 import type { PlatformFetch } from "../jlc-parts-engine/types"
 import type { DigiKeySearchPart } from "./types"
 import { getPartsEngineUrl } from "../get-parts-engine-url"
+import { getPartsEngineCacheKey } from "../get-parts-engine-cache-key"
 
 export const digikeyCache = new Map<string, unknown>()
 
@@ -26,7 +27,7 @@ export const getDigiKeyPartsCached = async (
   }
   url.searchParams.set("json", "true")
 
-  const cacheKey = url.toString()
+  const cacheKey = getPartsEngineCacheKey(url.toString(), options.platformFetch)
   const cached = digikeyCache.get(cacheKey)
   if (cached) return cached as Record<string, DigiKeySearchPart[]>
 
