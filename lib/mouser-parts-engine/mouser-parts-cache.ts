@@ -1,6 +1,7 @@
 import type { PlatformFetch } from "../jlc-parts-engine/types"
 import type { MouserSearchPart } from "./types"
 import { getPartsEngineUrl } from "../get-parts-engine-url"
+import { getPartsEngineCacheKey } from "../get-parts-engine-cache-key"
 
 export const mouserCache = new Map<string, unknown>()
 
@@ -26,7 +27,7 @@ export const getMouserPartsCached = async (
   }
   url.searchParams.set("json", "true")
 
-  const cacheKey = url.toString()
+  const cacheKey = getPartsEngineCacheKey(url.toString(), options.platformFetch)
   const cached = mouserCache.get(cacheKey)
   if (cached) return cached as Record<string, MouserSearchPart[]>
 
