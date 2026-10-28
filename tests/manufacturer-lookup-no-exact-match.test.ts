@@ -4,28 +4,28 @@ import {
   JlcPcbPartsEngine,
   type PlatformFetch,
 } from "../lib/jlc-parts-engine"
-import rawPart from "./fixtures/C7496818.raweasy.json"
+import rawPart from "./fixtures/C42401279.raweasy.json"
 
 afterEach(() => cache.clear())
 
-test("repro: manufacturer lookup imports an unrelated LED without an exact match", async () => {
-  const manufacturerPartNumber = "TYPE-C-31-M-12"
+test("repro: TTP223-BA6 manufacturer lookup imports an unrelated MOSFET", async () => {
+  const manufacturerPartNumber = "TTP223-BA6"
   const platformFetch = mock<PlatformFetch>(async (input, init) => {
     const url = String(input)
     if (
       url ===
       `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: manufacturerPartNumber, json: "true" })}`
     ) {
-      // First result recorded on 2026-10-28; none of the 100 results matched.
-      // Retain that row to isolate parts-engine's fallback from live search.
+      // Recorded on 2026-10-28: the only result for the wristband touch sensor.
+      // https://tscircuit.com/gokul/flex-led-wristband (U3, TTP223-BA6)
       return Response.json({
-        components: [
-          { mfr: "F.0603.00025/P2-0603G1TS2-06T-002", lcsc: 7496818 },
-        ],
+        components: [{ mfr: "HAOT10N65", lcsc: 42401279 }],
       })
     }
     if (url === "https://easyeda.com/api/components/search") {
-      expect(new URLSearchParams(String(init?.body)).get("wd")).toBe("C7496818")
+      expect(new URLSearchParams(String(init?.body)).get("wd")).toBe(
+        "C42401279",
+      )
       return Response.json({
         success: true,
         result: {
@@ -34,12 +34,12 @@ test("repro: manufacturer lookup imports an unrelated LED without an exact match
       })
     }
     if (url.startsWith(`https://easyeda.com/api/components/${rawPart.uuid}?`)) {
-      // Public EasyEDA detail response for C7496818, recorded on 2026-10-28.
+      // Public EasyEDA detail response for C42401279, recorded on 2026-10-28.
       return Response.json({ success: true, result: rawPart })
     }
     if (
       url.startsWith(
-        "https://modelcdn.tscircuit.com/easyeda_models/assets/C7496818.obj",
+        "https://modelcdn.tscircuit.com/easyeda_models/assets/C42401279.obj",
       )
     ) {
       return new Response(null, { status: 404 })
@@ -56,8 +56,8 @@ test("repro: manufacturer lookup imports an unrelated LED without an exact match
     (element) => element.type === "source_component",
   )
 
-  // This snapshot records the bug, not the desired behavior: a USB-C request
-  // returns a two-pad LED. A fix should update this same reproduction.
+  // This snapshot records the bug: the wristband's six-pad touch sensor
+  // request returns a three-hole MOSFET. A fix should update this reproduction.
   expect({
     requestedManufacturerPartNumber: manufacturerPartNumber,
     importedManufacturerPartNumber: sourceComponent?.manufacturer_part_number,
@@ -68,10 +68,10 @@ test("repro: manufacturer lookup imports an unrelated LED without an exact match
     ).length,
   }).toMatchInlineSnapshot(`
     {
-      "importedManufacturerPartNumber": "F.0603.00025/P2-0603G1TS2-06T-002",
-      "platedHoleCount": 0,
-      "requestedManufacturerPartNumber": "TYPE-C-31-M-12",
-      "smtPadCount": 2,
+      "importedManufacturerPartNumber": "HAOT10N65",
+      "platedHoleCount": 3,
+      "requestedManufacturerPartNumber": "TTP223-BA6",
+      "smtPadCount": 0,
     }
   `)
 })
