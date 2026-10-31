@@ -73,3 +73,19 @@ test("fetchPartCircuitJson works with manufacturerPartNumber (TYPE-C-31-M-12)", 
   expect(types.filter((t) => t === "pcb_smtpad").length).toBe(12)
   expect(types.filter((t) => t === "pcb_plated_hole").length).toBe(4)
 })
+
+test("fetchPartCircuitJson returns undefined when manufacturerPartNumber has no exact match", async () => {
+  platformFetch.mockClear()
+  cache.set(
+    `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: "TTP223-BA6", json: "true" })}`,
+    {
+      components: [{ mfr: "HAOT10N65", lcsc: 42401279 }],
+    },
+  )
+  const result = await jlcPartsEngine.fetchPartCircuitJson!({
+    manufacturerPartNumber: "TTP223-BA6",
+  })
+
+  expect(result).toBeUndefined()
+  expect(platformFetch).not.toHaveBeenCalled()
+})
