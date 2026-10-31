@@ -373,11 +373,8 @@ export class JlcPcbPartsEngine implements PartsEngine {
           normalizePartNumber(component.mfr) ===
           normalizedManufacturerPartNumber,
       )
-      const componentMatch =
-        exactManufacturerPartMatch ??
-        (includeDatasheetInformation ? undefined : components?.[0])
-      resolvedSupplierPartNumber = componentMatch
-        ? `C${componentMatch.lcsc}`
+      resolvedSupplierPartNumber = exactManufacturerPartMatch
+        ? `C${exactManufacturerPartMatch.lcsc}`
         : undefined
     }
 
