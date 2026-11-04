@@ -1,6 +1,6 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test"
-import { jlcPartsEngine, cache } from "../lib/jlc-parts-engine"
+import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import type { AnySourceComponent } from "circuit-json"
+import { cache, jlcPartsEngine } from "../lib/jlc-parts-engine"
 
 const originalFetch = globalThis.fetch
 const getFirstFetchedUrl = (fetchedUrls: string[]) => {
@@ -46,7 +46,11 @@ describe("jlcPartsEngine", () => {
       if (url.includes("/headers/")) {
         return {
           json: async () => ({
-            headers: [{ lcsc: "3456" }, { lcsc: "7890" }, { lcsc: "1234" }],
+            headers: [
+              { lcsc: "3456", num_rows: 1 },
+              { lcsc: "7890", num_rows: 1 },
+              { lcsc: "1234", num_rows: 1 },
+            ],
           }),
         } as Response
       }
