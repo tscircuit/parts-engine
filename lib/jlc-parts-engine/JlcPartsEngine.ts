@@ -326,13 +326,14 @@ export class JlcPcbPartsEngine implements PartsEngine {
           num_pins: sourceComponent.pin_count,
         },
       )
-      const compatiblePcbMountConnectors = jst_connectors?.filter(
-        (connector: any) =>
-          isCompatiblePcbMountJstConnector(
-            connector,
-            searchConfig.compatibleReferenceSeries,
-          ),
-      )
+      const compatiblePcbMountConnectors = Array.isArray(jst_connectors)
+        ? jst_connectors.filter((connector: any) =>
+            isCompatiblePcbMountJstConnector(
+              connector,
+              searchConfig.compatibleReferenceSeries,
+            ),
+          )
+        : undefined
 
       return {
         jlcpcb: withBasicPartPreference(compatiblePcbMountConnectors)
@@ -365,17 +366,27 @@ export class JlcPcbPartsEngine implements PartsEngine {
       const { components } = await getJlcPartsCached("components", {
         search: manufacturerPartNumber,
       })
+      const validComponents = Array.isArray(components)
+        ? components.filter(
+            (component: any) =>
+              component &&
+              typeof component === "object" &&
+              component.lcsc !== undefined &&
+              component.lcsc !== null &&
+              String(component.lcsc).trim() !== "",
+          )
+        : []
       const normalizedManufacturerPartNumber = normalizePartNumber(
         manufacturerPartNumber,
       )
-      const exactManufacturerPartMatch = components?.find(
+      const exactManufacturerPartMatch = validComponents.find(
         (component: any) =>
           normalizePartNumber(component.mfr) ===
           normalizedManufacturerPartNumber,
       )
       const componentMatch =
         exactManufacturerPartMatch ??
-        (includeDatasheetInformation ? undefined : components?.[0])
+        (includeDatasheetInformation ? undefined : validComponents[0])
       resolvedSupplierPartNumber = componentMatch
         ? `C${componentMatch.lcsc}`
         : undefined
