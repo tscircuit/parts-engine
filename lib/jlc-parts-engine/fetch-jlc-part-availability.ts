@@ -100,7 +100,13 @@ export const fetchJlcPartAvailability = async (
   })
   const response = await platformFetch(url.toString(), requestOptions)
   if (!response.ok) throw new Error("JLC availability lookup failed")
-  const catalog = jlcSearchResponse.safeParse(await response.json())
+  let responsePayload: unknown
+  try {
+    responsePayload = await response.json()
+  } catch {
+    return unknownAvailability
+  }
+  const catalog = jlcSearchResponse.safeParse(responsePayload)
   if (!catalog.success) return unknownAvailability
   const supplierPart = catalog.data.components.find(
     (part) => normalizeJlcPartNumber(String(part.lcsc)) === partNumber,
