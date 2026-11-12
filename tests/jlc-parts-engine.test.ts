@@ -46,7 +46,11 @@ describe("jlcPartsEngine", () => {
       if (url.includes("/headers/")) {
         return {
           json: async () => ({
-            headers: [{ lcsc: "3456" }, { lcsc: "7890" }, { lcsc: "1234" }],
+            headers: [
+              { lcsc: "3456", num_rows: 1 },
+              { lcsc: "7890", num_rows: 1 },
+              { lcsc: "1234", num_rows: 1 },
+            ],
           }),
         } as Response
       }
