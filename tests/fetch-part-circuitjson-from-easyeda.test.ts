@@ -9,6 +9,15 @@ import rawPart from "./fixtures/C165948.raweasy.json"
 // Recorded EasyEDA component; keep footprint assertions independent of live catalogs.
 const platformFetch = mock<PlatformFetch>(async (input, init) => {
   const url = String(input)
+  if (url.startsWith("https://jlcsearch.tscircuit.com/components/list?")) {
+    expect(new URL(url).searchParams.get("search")).toBe("TYPE-C-31-M-12")
+    return Response.json({
+      components: [
+        { mfr: "TYPE-C-OTHER", lcsc: 1 },
+        { mfr: "TYPE-C-31-M-12", lcsc: 165948 },
+      ],
+    })
+  }
   if (url === "https://easyeda.com/api/components/search") {
     expect(new URLSearchParams(String(init?.body)).get("wd")).toBe("C165948")
     return Response.json({
@@ -53,15 +62,6 @@ test("fetchPartCircuitJson returns circuit json for USB-C connector (C165948)", 
 })
 
 test("fetchPartCircuitJson works with manufacturerPartNumber (TYPE-C-31-M-12)", async () => {
-  cache.set(
-    `https://jlcsearch.tscircuit.com/components/list?${new URLSearchParams({ search: "TYPE-C-31-M-12", json: "true" })}`,
-    {
-      components: [
-        { mfr: "TYPE-C-OTHER", lcsc: 1 },
-        { mfr: "TYPE-C-31-M-12", lcsc: 165948 },
-      ],
-    },
-  )
   const result = await jlcPartsEngine.fetchPartCircuitJson!({
     manufacturerPartNumber: "TYPE-C-31-M-12",
   })

@@ -37,3 +37,8 @@ fetch implementation or a test/self-hosted endpoint.
 shape while caching Mouser Search API calls. Use
 `new MouserPartsEngine({ platformFetch, apiBaseUrl })` to inject a platform
 fetch implementation or a test/self-hosted endpoint.
+
+Part-selection caches keep results separate for distinct `platformFetch`
+functions, even when they request the same URL. Engines using the same injected
+function can reuse results. Clearing the exported provider cache also clears
+results for injected fetch implementations.
