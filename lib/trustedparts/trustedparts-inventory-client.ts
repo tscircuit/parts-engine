@@ -10,6 +10,8 @@ export type TrustedPartsQuery = {
 
 export type TrustedPartsSearchRequest = {
   queries: TrustedPartsQuery[]
+  /** Filter the entire batch, per the API v2 request schema. */
+  distributors?: string[]
   userAgent?: string
   sourceIp?: string
   countryCode?: string
@@ -122,12 +124,19 @@ export class TrustedPartsInventoryClient {
     for (const query of request.queries) {
       if (
         typeof query.searchToken !== "string" ||
-        query.searchToken.trim().length < 2
+        query.searchToken.trim().length < 2 ||
+        query.searchToken.length > 100
       ) {
-        throw new Error(
-          "TrustedParts SearchToken must be at least two characters",
-        )
+        throw new Error("TrustedParts SearchToken must be 2 to 100 characters")
       }
+    }
+    if (
+      request.exactMatch === false &&
+      (request.queries.length !== 1 || request.isCrawler === true)
+    ) {
+      throw new Error(
+        "TrustedParts partial-match queries require one part and a non-crawler user",
+      )
     }
     if (request.countryCode && !/^[a-zA-Z]{2}$/.test(request.countryCode)) {
       throw new Error("TrustedParts countryCode must contain two letters")
@@ -140,10 +149,13 @@ export class TrustedPartsInventoryClient {
         SearchToken: query.searchToken,
         ...(query.manufacturers ? { Manufacturers: query.manufacturers } : {}),
       })),
+      ...(request.distributors ? { Distributors: request.distributors } : {}),
       InStockOnly: request.inStockOnly ?? false,
       ExactMatch: request.exactMatch ?? true,
       IsCrawler: request.isCrawler ?? false,
-      UseCachedData: request.useCachedData ?? true,
+      // Supplier documentation defaults to live inventory/pricing, rather than
+      // its optional accelerated cached-data search.
+      UseCachedData: request.useCachedData ?? false,
       UserAgent: request.userAgent ?? this.options.userAgent,
       ...(request.sourceIp ? { SourceIp: request.sourceIp } : {}),
       ...(request.countryCode ? { CountryCode: request.countryCode } : {}),

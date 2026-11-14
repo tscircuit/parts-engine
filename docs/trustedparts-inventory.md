@@ -14,7 +14,7 @@ supplier credentials.
 Import TrustedPartsInventoryClient from @tscircuit/parts-engine. Instantiate
 using TRUSTEDPARTS_COMPANY_ID and TRUSTEDPARTS_API_KEY loaded from **server-only**
 secret settings. Supply a truthful UserAgent or internal application ID.
-Call search({ queries: [{ searchToken: "LM358" }], useCachedData: true }).
+Call search({ queries: [{ searchToken: "LM358" }] }). The client requests\nreal-time stock and pricing by default (UseCachedData: false); set\nuseCachedData: true only when the less-fresh provider cache is appropriate.
 
 The client forwards the upstream response without combining it with other
 supplier catalogs, stripping product links, or removing attribution.
@@ -22,7 +22,7 @@ supplier catalogs, stripping product links, or removing attribution.
 ## Constraints
 
 - Real TrustedParts credentials and API approval are required for live tests.
-- Up to 50 part-number queries per request; no automatic retries, default
+- Up to 50 part-number queries per request (each token 2–100 characters).\n  Supplier filtering by distributors applies to the entire batch, not each\n  query. Partial matching is supported for one non-crawler query only.\n- No automatic retries, default
   10-second timeout; use your own authenticated server rate limiter.
 - Zero persistent response caching by default. Identical simultaneous
   requests are coalesced only in-memory while pending.

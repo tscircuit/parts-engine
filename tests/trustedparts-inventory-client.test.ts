@@ -25,6 +25,7 @@ describe("TrustedPartsInventoryClient", () => {
         ],
         countryCode: "US",
         currencyCode: "USD",
+        distributors: ["DigiKey"],
         sourceIp: "198.51.100.9",
       }),
     ).toEqual({ Offers: [{ id: 5 }] })
@@ -38,10 +39,11 @@ describe("TrustedPartsInventoryClient", () => {
       CompanyId: settings.companyId,
       ApiKey: settings.apiKey,
       Queries: [{ SearchToken: "LM358", Manufacturers: ["Texas Instruments"] }],
+      Distributors: ["DigiKey"],
       InStockOnly: false,
       ExactMatch: true,
       IsCrawler: false,
-      UseCachedData: true,
+      UseCachedData: false,
       UserAgent: settings.userAgent,
       SourceIp: "198.51.100.9",
       CountryCode: "US",
@@ -150,13 +152,31 @@ describe("TrustedPartsInventoryClient", () => {
     ).rejects.toThrow("1 to 50")
     await expect(
       client.search({ queries: [{ searchToken: " " }] }),
-    ).rejects.toThrow("at least two")
+    ).rejects.toThrow("2 to 100")
     await expect(
       client.search({ queries, countryCode: "United States" }),
     ).rejects.toThrow("countryCode")
     await expect(
       client.search({ queries, currencyCode: "USD1" }),
     ).rejects.toThrow("currencyCode")
+    await expect(
+      client.search({
+        queries: [{ searchToken: "x".repeat(101) }],
+      }),
+    ).rejects.toThrow("2 to 100")
+    await expect(
+      client.search({
+        queries: [{ searchToken: "LM358" }, { searchToken: "TL072" }],
+        exactMatch: false,
+      }),
+    ).rejects.toThrow("partial-match")
+    await expect(
+      client.search({
+        queries,
+        exactMatch: false,
+        isCrawler: true,
+      }),
+    ).rejects.toThrow("partial-match")
     expect(calls).toBe(0)
   })
 
