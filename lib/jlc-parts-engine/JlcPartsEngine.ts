@@ -22,6 +22,7 @@ import {
   withBasicPartPreference,
 } from "./jlc-parts-cache"
 import type { JlcPcbPartsEngineOptions, PlatformFetch } from "./types"
+import { jlcpcbAssemblyPin1Locations } from "./jlcpcb-assembly-pin1-locations"
 
 const normalizePartNumber = (partNumber: unknown) =>
   typeof partNumber === "string" ? partNumber.trim().toLowerCase() : undefined
@@ -394,14 +395,30 @@ export class JlcPcbPartsEngine implements PartsEngine {
     // Keep supplier-reported identity for exact datasheet matching.
     const importedManufacturerPartNumber =
       parsed.dataStr.head.c_para["Manufacturer Part"]?.trim()
-    const partCircuitJson = circuitJson.map((element) =>
-      element.type === "source_component" && importedManufacturerPartNumber
-        ? {
-            ...element,
-            manufacturer_part_number: importedManufacturerPartNumber,
-          }
-        : element,
+    const assemblyPin1Location = jlcpcbAssemblyPin1Locations.get(
+      resolvedSupplierPartNumber.trim().toUpperCase(),
     )
+    const partCircuitJson = circuitJson.map((element) => {
+      if (
+        element.type === "source_component" &&
+        importedManufacturerPartNumber
+      ) {
+        return {
+          ...element,
+          manufacturer_part_number: importedManufacturerPartNumber,
+        }
+      }
+      if (element.type === "pcb_component" && assemblyPin1Location) {
+        return {
+          ...element,
+          supplier_pin1_location_map: {
+            ...element.supplier_pin1_location_map,
+            jlcpcb: assemblyPin1Location,
+          },
+        }
+      }
+      return element
+    })
     if (!includeDatasheetInformation) return partCircuitJson
     return enrichPartCircuitJsonWithDatasheet(
       {
