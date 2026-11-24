@@ -1,6 +1,9 @@
 import type { PartsEngine } from "@tscircuit/props"
 import { getJlcpcbPackageName } from "../footprint-translators"
-import { getPinHeaderSearchParams } from "../jlc-parts-engine/get-pin-header-search-params"
+import {
+  filterPinHeaderParts,
+  getPinHeaderSearchParams,
+} from "../jlc-parts-engine/get-pin-header-search-params"
 import {
   getDigiKeyPartsCached,
   withDigiKeyStockPreference,
@@ -78,10 +81,14 @@ export class DigiKeyPartsEngine implements PartsEngine {
 
     if (sourceComponent.ftype === "simple_pin_header") {
       return this.toSupplierPartNumbers(
-        await this.getCategoryParts(
-          "/headers/list",
-          "headers",
-          getPinHeaderSearchParams(sourceComponent, footprinterString),
+        filterPinHeaderParts(
+          await this.getCategoryParts(
+            "/headers/list",
+            "headers",
+            getPinHeaderSearchParams(sourceComponent, footprinterString),
+          ),
+          sourceComponent,
+          footprinterString,
         ),
       )
     }
