@@ -12,9 +12,14 @@ export const createJlcPartsFetcher =
   ) =>
   async (name: string, params: Record<string, unknown>) => {
     const paramString = new URLSearchParams(
-      Object.entries({ ...params, json: "true" }).map(
-        ([name, constraint]): [string, string] => [name, String(constraint)],
-      ),
+      Object.entries({ ...params, json: "true" })
+        .filter(
+          ([, constraint]) => constraint !== undefined && constraint !== null,
+        )
+        .map(([name, constraint]): [string, string] => [
+          name,
+          String(constraint),
+        ]),
     ).toString()
     const url = getPartsEngineUrl({
       path: `${name}/list?${paramString}`,
